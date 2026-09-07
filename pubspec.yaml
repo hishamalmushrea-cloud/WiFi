@@ -33,6 +33,7 @@ dependencies:
   bonsoir: ^5.1.0
   upnp: ^2.0.2
   network_info_plus: ^5.0.3
+  connectivity_plus: ^6.0.3
 
   # ── الرسوم البيانية والخرائط ─────────────────────────────────
   fl_chart: ^0.67.0
