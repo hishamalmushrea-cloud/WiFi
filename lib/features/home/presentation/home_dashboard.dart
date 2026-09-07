@@ -12,11 +12,17 @@ import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../devices/presentation/device_providers.dart';
+import '../../network_scan/presentation/network_scan_page.dart';
 import '../../network_scan/presentation/scan_providers.dart';
+import '../../router_control/presentation/router_dashboard_page.dart';
+import '../../router_control/presentation/router_providers.dart';
 import '../../router_control/presentation/router_selection_screen.dart';
+import '../../security/presentation/security_dashboard_page.dart';
 import '../../security/presentation/security_providers.dart';
 import '../../settings/presentation/settings_page.dart';
+import '../../speed_test/presentation/speed_test_page.dart';
 import '../../speed_test/presentation/speed_test_providers.dart';
+import '../../wifi_analysis/presentation/wifi_analysis_page.dart';
 
 /// لوحة التحكم الرئيسية: إحصاءات + إجراءات سريعة + آخر التنبيهات.
 class HomeDashboard extends ConsumerWidget {
@@ -126,38 +132,42 @@ class HomeDashboard extends ConsumerWidget {
                 desktopColumns: 4,
                 itemCount: 6,
                 itemBuilder: (context, i) {
+                  void open(Widget page) => Navigator.of(context)
+                      .push(MaterialPageRoute(builder: (_) => page));
+                  final routerConnected = ref.watch(routerProvider).isConnected;
                   final actions = <QuickActionData>[
                     QuickActionData(
                         Icons.wifi_find_rounded,
                         AppStrings.actionScanNetwork,
                         AppColors.gradientPrimary,
                         AppColors.glowPrimary,
-                        () => ref.read(networkScanProvider.notifier).startScan()),
+                        () => open(const NetworkScanPage())),
                     QuickActionData(
                         Icons.speed_rounded,
                         AppStrings.actionSpeedTest,
                         AppColors.gradientAccent,
                         AppColors.glowAccent,
-                        () => _comingSoon(context)),
+                        () => open(const SpeedTestPage())),
                     QuickActionData(
                         Icons.analytics_rounded,
                         AppStrings.actionWifiAnalysis,
                         AppColors.gradientSuccess,
                         AppColors.glowAccent,
-                        () => _comingSoon(context)),
+                        () => open(const WifiAnalysisPage())),
                     QuickActionData(
                         Icons.security_rounded,
                         AppStrings.actionSecurity,
                         AppColors.gradientWarning,
                         AppColors.glowError,
-                        () => ref.read(securityDashboardProvider.notifier).evaluate()),
+                        () => open(const SecurityDashboardPage())),
                     QuickActionData(
                         Icons.router_rounded,
                         AppStrings.actionRouter,
                         AppColors.gradientPrimary,
                         AppColors.glowPrimary,
-                        () => Navigator.of(context).push(MaterialPageRoute(
-                            builder: (_) => const RouterSelectionScreen()))),
+                        () => open(routerConnected
+                            ? const RouterDashboardPage()
+                            : const RouterSelectionScreen())),
                     QuickActionData(
                         Icons.map_rounded,
                         AppStrings.actionWardriving,

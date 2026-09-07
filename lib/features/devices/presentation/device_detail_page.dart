@@ -11,6 +11,7 @@ import '../../../core/presentation/widgets/modern_device_card.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../security/data/security_repository_impl.dart';
 import 'device_providers.dart';
 
 /// صفحة تفاصيل جهاز: معلومات، سجل تاريخي، وإجراءات تحكم.
@@ -236,6 +237,33 @@ class DeviceDetailPage extends ConsumerWidget {
                         label: AppStrings.deviceKnown,
                         color: AppColors.success,
                         onTap: () => actions.markKnown(device),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      _ActionTile(
+                        icon: Icons.bug_report_rounded,
+                        label: AppStrings.vulnerabilities,
+                        color: AppColors.warning,
+                        onTap: () async {
+                          final result = await ref
+                              .read(securityRepositoryProvider)
+                              .scanVulnerabilities(device.id);
+                          if (!context.mounted) return;
+                          result.when(
+                            onSuccess: (vulns) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(vulns.isEmpty
+                                      ? 'لا ثغرات مكتشفة على هذا الجهاز'
+                                      : 'عُثر على ${vulns.length} تحذير أمني'),
+                                ),
+                              );
+                            },
+                            onFailure: (f) =>
+                                ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(f.message)),
+                            ),
+                          );
+                        },
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       _ActionTile(

@@ -10,6 +10,7 @@ import '../../../core/presentation/widgets/responsive_layout.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'router_dashboard_page.dart';
 import 'router_providers.dart';
 
 /// شاشة اختيار نوع الراوتر والاتصال به.
@@ -207,6 +208,9 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
   Future<void> _connect() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _busy = true);
+    // نلتقط الـ Navigator قبل إغلاق الورقة لأن context المرتبط بها
+    // يصبح غير صالح بعد pop.
+    final navigator = Navigator.of(context);
 
     final ok = await ref.read(routerProvider.notifier).connect(
           ip: _ip.text.trim(),
@@ -217,7 +221,13 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
 
     if (!mounted) return;
     setState(() => _busy = false);
-    if (ok) Navigator.of(context).pop();
+    if (ok) {
+      navigator.pop(); // إغلاق ورقة الاتصال
+      // ننتقل للوحة التحكم بعد الاتصال الناجح.
+      navigator.push(
+        MaterialPageRoute(builder: (_) => const RouterDashboardPage()),
+      );
+    }
   }
 
   @override
