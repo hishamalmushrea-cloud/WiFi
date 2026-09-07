@@ -42,7 +42,7 @@ flutter run
 | المرحلة | المحتوى | الحالة |
 |---|---|---|
 | 1 | إعداد المشروع | ✅ |
-| 2 | Core Layer (ثيمات، أخطاء، كشف Root، أدوات) | ⏳ |
+| 2 | Core Layer (ثيمات، أخطاء، كشف Root، أدوات، Extensions، متجاوب) | ✅ |
 | 3 | Database Layer (DAOs، فهارس، migrations، تشفير) | ⏳ |
 | 4 | Domain Layer (Entities, Repositories, UseCases) | ⏳ |
 | 5 | Data Layer (Repos, Datasources, Router Controllers) | ⏳ |
