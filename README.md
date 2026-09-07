@@ -47,7 +47,7 @@ flutter run
 | 4 | Domain Layer (12 كيان Freezed + 9 مستودعات + حالات استخدام) | ✅ |
 | 5 | Data Layer (10 مستودعات + 10 متحكمات راوتر + Mappers + Datasources) | ✅ |
 | 6 | Network Services (اكتشاف mDNS/UPnP، بصمة أجهزة، كشف تهديدات، مراقب خلفية، إشعارات، موفّرات Riverpod) | ✅ |
-| 7 | UI - Common Widgets (Glass cards, gauges, graphs) | ⏳ |
+| 7 | UI - Common Widgets (زجاج، عدّادات، رسوم، حالات، تنقل) | ✅ |
 | 8 | الشاشات الأساسية | ⏳ |
 | 9 | شاشات الميزات | ⏳ |
 | 10 | الشاشات المتقدمة | ⏳ |
