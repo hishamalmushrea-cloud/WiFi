@@ -1,3 +1,4 @@
+import '../../localization/app_strings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -30,7 +31,7 @@ final appBootstrapProvider = FutureProvider<BootstrapResult>((ref) async {
     await notifications.init();
     notificationsReady = true;
   } catch (e) {
-    AppLogger.warning('تعذّرت تهيئة الإشعارات عند الإقلاع', error: e);
+    AppLogger.warning(AppStrings.bootstrapNotifFailed, error: e);
   }
 
   try {
@@ -38,7 +39,7 @@ final appBootstrapProvider = FutureProvider<BootstrapResult>((ref) async {
     await ref.read(rootStatusProvider.notifier).check();
     rootKnown = true;
   } catch (e) {
-    AppLogger.warning('تعذّر فحص Root عند الإقلاع', error: e);
+    AppLogger.warning(AppStrings.bootstrapRootFailed, error: e);
   }
 
   // نطلب صلاحية الإشعارات فقط بهدوء؛ البقية تُطلب في سياقها.
@@ -47,7 +48,7 @@ final appBootstrapProvider = FutureProvider<BootstrapResult>((ref) async {
     await permissions.request(Permission.notification);
   } catch (_) {}
 
-  AppLogger.info('اكتملت تهيئة الإقلاع', tag: 'Bootstrap');
+  AppLogger.info(AppStrings.bootstrapReady, tag: 'Bootstrap');
   return BootstrapResult(
     notificationsReady: notificationsReady,
     rootStatusKnown: rootKnown,

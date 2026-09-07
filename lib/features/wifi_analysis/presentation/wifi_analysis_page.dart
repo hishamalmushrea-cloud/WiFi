@@ -80,7 +80,7 @@ class WifiAnalysisPage extends ConsumerWidget {
                               Text(
                                 state.result!.recommendations
                                     .map((r) =>
-                                        'قناة ${r.bestChannel}')
+                                        AppStrings.channelLabel(r.bestChannel))
                                     .join(' • '),
                                 style: const TextStyle(
                                     color: AppColors.success,

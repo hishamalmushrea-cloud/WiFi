@@ -29,7 +29,7 @@ class SecurityDashboardPage extends ConsumerWidget {
           IconButton(
             onPressed: () => ref.read(securityDashboardProvider.notifier).resolveAll(),
             icon: const Icon(Icons.done_all_rounded),
-            tooltip: 'تعليم الكل كمعالَج',
+            tooltip: AppStrings.resolveAll,
           ),
         ],
       ),
@@ -44,7 +44,7 @@ class SecurityDashboardPage extends ConsumerWidget {
               FilledButton.icon(
                 onPressed: state.loading ? null : notifier.evaluate,
                 icon: const Icon(Icons.security_rounded),
-                label: Text(state.loading ? AppStrings.loading : 'إجراء فحص أمني'),
+                label: Text(state.loading ? AppStrings.loading : AppStrings.runSecurityScan),
               ),
               const SizedBox(height: AppSpacing.xl),
 
@@ -66,7 +66,7 @@ class SecurityDashboardPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.xl),
 
-                SectionHeader(title: 'فحوصات الأمان'),
+                SectionHeader(title: AppStrings.securityChecks),
                 const SizedBox(height: AppSpacing.sm),
                 ...state.score!.checks.map((check) => _CheckTile(check: check)),
 

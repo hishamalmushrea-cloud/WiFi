@@ -36,7 +36,7 @@ class DevicesPage extends ConsumerWidget {
                 onChanged: (v) =>
                     ref.read(deviceQueryProvider.notifier).setSearch(v),
                 decoration: InputDecoration(
-                  hintText: '${AppStrings.search}… (IP, MAC, اسم)',
+                  hintText: AppStrings.searchHintDots(AppStrings.search),
                   prefixIcon: const Icon(Icons.search_rounded),
                 ),
               ),

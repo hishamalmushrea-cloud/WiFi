@@ -79,8 +79,8 @@ class RootRequiredGate extends ConsumerWidget {
               status.state == RootState.checking
                   ? AppStrings.rootChecking
                   : (status.state == RootState.unknown
-                      ? 'تعذّر الجزم — أعد الفحص'
-                      : 'الحالة: لا توجد صلاحيات Root'),
+                      ? AppStrings.rootRecheck
+                      : AppStrings.rootStatusNone),
               style: Theme.of(context).textTheme.labelMedium,
             ),
           ),

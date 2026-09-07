@@ -1,3 +1,4 @@
+import '../../localization/app_strings.dart';
 import 'package:flutter/material.dart';
 
 import '../../theme/app_colors.dart';
@@ -24,11 +25,11 @@ class SecurityScoreGauge extends StatelessWidget {
   }
 
   String get _grade {
-    if (score >= 85) return 'ممتاز';
-    if (score >= 70) return 'جيد';
-    if (score >= 50) return 'متوسط';
-    if (score >= 30) return 'ضعيف';
-    return 'حرج';
+    if (score >= 85) return AppStrings.ratingGreat;
+    if (score >= 70) return AppStrings.ratingGood;
+    if (score >= 50) return AppStrings.ratingMedium;
+    if (score >= 30) return AppStrings.ratingWeak;
+    return AppStrings.severityCritical;
   }
 
   @override

@@ -27,8 +27,8 @@ class RouterDashboardPage extends ConsumerWidget {
           appBar: AppBar(title: const Text(AppStrings.routerDashboard)),
           body: const EmptyState(
             icon: Icons.router_rounded,
-            title: 'غير متصل بالراوتر',
-            message: 'اتصل بالراوتر أولاً من شاشة الاختيار.',
+            title: AppStrings.routerNotConnected,
+            message: AppStrings.routerConnectFirst,
           ),
         ),
       );
@@ -45,12 +45,12 @@ class RouterDashboardPage extends ConsumerWidget {
               isScrollable: true,
               tabAlignment: TabAlignment.start,
               tabs: [
-                Tab(icon: Icon(Icons.dashboard_rounded), text: 'نظرة عامة'),
-                Tab(icon: Icon(Icons.people_alt_rounded), text: 'العملاء'),
-                Tab(icon: Icon(Icons.wifi_rounded), text: 'الواي فاي'),
-                Tab(icon: Icon(Icons.guest_rounded) , text: 'الضيوف'),
-                Tab(icon: Icon(Icons.alt_route_rounded), text: 'المنافذ'),
-                Tab(icon: Icon(Icons.filter_alt_rounded), text: 'تصفية MAC'),
+                Tab(icon: Icon(Icons.dashboard_rounded), text: AppStrings.tabOverview),
+                Tab(icon: Icon(Icons.people_alt_rounded), text: AppStrings.tabClients),
+                Tab(icon: Icon(Icons.wifi_rounded), text: AppStrings.tabWifi),
+                Tab(icon: Icon(Icons.guest_rounded) , text: AppStrings.tabGuests),
+                Tab(icon: Icon(Icons.alt_route_rounded), text: AppStrings.tabPorts),
+                Tab(icon: Icon(Icons.filter_alt_rounded), text: AppStrings.tabMacFilter),
               ],
             ),
           ),
@@ -91,7 +91,7 @@ class _OverviewTab extends ConsumerWidget {
               Icon(Icons.router_rounded,
                   size: 48, color: AppColors.primary),
               const SizedBox(height: AppSpacing.sm),
-              Text('متصل: ${routerState.info?.brand.name ?? ""}',
+              Text(AppStrings.connectedTo(routerState.info?.brand.name ?? ''),
                   style: context.textTheme.titleMedium),
               Text(routerState.info?.model ?? routerState.info!.ip,
                   style: context.textTheme.bodySmall),
@@ -101,7 +101,7 @@ class _OverviewTab extends ConsumerWidget {
         const SizedBox(height: AppSpacing.lg),
         stats.when(
           loading: () => const ShimmerCard(),
-          error: (e, _) => const Text('تعذّرت قراءة الإحصائيات'),
+          error: (e, _) => const Text(AppStrings.statsLoadFailed),
           data: (s) {
             final st = s ?? const RouterTrafficStats();
             return Column(
@@ -111,12 +111,12 @@ class _OverviewTab extends ConsumerWidget {
                     Expanded(child: _StatBox(
                         icon: Icons.people_alt_rounded,
                         value: '${st.connectedClients}',
-                        label: 'عميل متصل')),
+                        label: AppStrings.connectedClient)),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(child: _StatBox(
                         icon: Icons.schedule_rounded,
-                        value: '${(st.uptimeSeconds / 3600).toStringAsFixed(0)}س',
-                        label: 'مدة التشغيل')),
+                        value: AppStrings.uptimeHours((st.uptimeSeconds / 3600).toStringAsFixed(0)),
+                        label: AppStrings.routerUptime)),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -125,12 +125,12 @@ class _OverviewTab extends ConsumerWidget {
                     Expanded(child: _StatBox(
                         icon: Icons.download_rounded,
                         value: '${st.totalDownloadKbps ~/ 1024}',
-                        label: 'تنزيل (Mbps)')),
+                        label: AppStrings.speedDownload)),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(child: _StatBox(
                         icon: Icons.upload_rounded,
                         value: '${st.totalUploadKbps ~/ 1024}',
-                        label: 'رفع (Mbps)')),
+                        label: AppStrings.speedUpload)),
                   ],
                 ),
               ],
@@ -143,14 +143,14 @@ class _OverviewTab extends ConsumerWidget {
           onPressed: () async {
             final confirm = await _confirm(
               context,
-              'إعادة تشغيل الراوتر',
-              'سيُعاد تشغيل الراوتر وقد ينقطع الاتصال لدقيقة. متابعة؟',
+              AppStrings.routerReboot,
+              AppStrings.routerRebootConfirm,
             );
             if (confirm == true) {
               await ref.read(routerRepositoryProvider).reboot();
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('أُرسل أمر إعادة التشغيل')),
+                  const SnackBar(content: Text(AppStrings.routerRebootSent)),
                 );
               }
             }
@@ -191,15 +191,15 @@ class _ClientsTab extends ConsumerWidget {
       child: clients.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (e, _) => ListView(children: const [
-          EmptyState(icon: Icons.people_alt_rounded, title: 'تعذّر جلب العملاء')
+          EmptyState(icon: Icons.people_alt_rounded, title: AppStrings.clientsLoadFailed)
         ]),
         data: (list) {
           if (list.isEmpty) {
             return ListView(children: const [
               EmptyState(
                   icon: Icons.people_alt_rounded,
-                  title: 'لا عملاء',
-                  message: 'لم يُعثر على عملاء من واجهة الراوتر.')
+                  title: AppStrings.noClients,
+                  message: AppStrings.noClientsHint)
             ]);
           }
           return ListView.separated(
@@ -268,7 +268,7 @@ class _WifiSettingsTabState extends ConsumerState<_WifiSettingsTab> {
     return settingsAsync.when(
       loading: () => const Center(child: CircularProgressIndicator()),
       error: (e, _) => const EmptyState(
-          icon: Icons.wifi_rounded, title: 'تعذّرت قراءة إعدادات الواي فاي'),
+          icon: Icons.wifi_rounded, title: AppStrings.wifiSettingsReadFailed),
       data: (settings) {
         if (settings != null && !_loaded && settings.ssid.isNotEmpty) {
           _ssid.text = settings.ssid;
@@ -286,17 +286,17 @@ class _WifiSettingsTabState extends ConsumerState<_WifiSettingsTab> {
                   TextField(
                     controller: _ssid,
                     decoration:
-                        const InputDecoration(labelText: 'اسم الشبكة (SSID)'),
+                        const InputDecoration(labelText: AppStrings.fieldSsid),
                   ),
                   const SizedBox(height: AppSpacing.md),
                   TextField(
                     controller: _password,
                     obscureText: true,
                     decoration:
-                        const InputDecoration(labelText: 'كلمة المرور'),
+                        const InputDecoration(labelText: AppStrings.fieldPassword),
                   ),
                   const SizedBox(height: AppSpacing.md),
-                  Text('القناة: $_channel',
+                  Text(AppStrings.channelNumber(_channel),
                       style: context.textTheme.titleSmall),
                   Slider(
                     value: _channel.toDouble().clamp(1, 13),
@@ -365,14 +365,14 @@ class _GuestNetworkTabState extends ConsumerState<_GuestNetworkTab> {
               SwitchListTile(
                 value: _enabled,
                 onChanged: (v) => setState(() => _enabled = v),
-                title: const Text('تفعيل شبكة الضيوف'),
+                title: const Text(AppStrings.guestEnable),
                 secondary: const Icon(Icons.guest_rounded,
                     color: AppColors.accent),
               ),
               const Divider(height: 1),
               ListTile(
-                title: const Text('عزل الضيوف عن الشبكة الداخلية'),
-                subtitle: const Text('لا يستطيع الضيوف رؤية أجهزتك'),
+                title: const Text(AppStrings.guestIsolation),
+                subtitle: const Text(AppStrings.guestIsolationHint),
                 trailing: const Icon(Icons.check_circle_rounded,
                     color: AppColors.success),
               ),
@@ -421,8 +421,8 @@ class _PortForwardTab extends ConsumerWidget {
               SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  'قواعد توجيه المنافذ تُقرأ من الراوتر عند الاتصال بواجهة تدعمها. '
-                  'الماركات المدعومة بنمط JSON ستظهر قواعدها هنا تلقائياً.',
+                  AppStrings.portForwardInfo
+                  AppStrings.brandRulesNote,
                 ),
               ),
             ],
@@ -449,8 +449,8 @@ class _MacFilterTab extends ConsumerWidget {
               SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  'قوائم السماح/الحظر تُدار عبر واجهة الراوتر. '
-                  'يمكنك أيضاً حظر الأجهزة من تبويب «العملاء» أو من صفحة الجهاز.',
+                  AppStrings.macFilterInfo
+                  AppStrings.blockHint,
                 ),
               ),
             ],

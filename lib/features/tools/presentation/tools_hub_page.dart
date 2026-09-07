@@ -109,7 +109,7 @@ class ToolsHubPage extends ConsumerWidget {
 
   void _comingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('تتطلب صلاحيات Root أو قيد التطوير')),
+      const SnackBar(content: Text(AppStrings.comingSoonRoot)),
     );
   }
 }

@@ -29,13 +29,13 @@ class _PortScanPageState extends ConsumerState<PortScanPage> {
 
   // تحذيرات أمنية معروفة لمنافذ خطرة (تعرض inline).
   static const _advisories = <int, String>{
-    23: 'Telnet غير مشفّر — استخدم SSH',
-    21: 'FTP ينقل كلمات المرور نصاً صريحاً',
-    445: 'SMB — تأكد من تحديث النظام وتعطيل SMBv1',
-    3389: 'RDP مكشوف — لا تعرضه على الشبكة العامة',
-    6379: 'Redis غالباً بلا مصادقة',
-    27017: 'MongoDB قد يكون بلا مصادقة',
-    5900: 'VNC — قيّده بشبكة داخلية',
+    23: AppStrings.advTelnet,
+    21: AppStrings.advFtp,
+    445: AppStrings.advSmb,
+    3389: AppStrings.advRdp,
+    6379: AppStrings.advRedis,
+    27017: AppStrings.advMongo,
+    5900: AppStrings.advVnc,
   };
 
   @override
@@ -55,7 +55,7 @@ class _PortScanPageState extends ConsumerState<PortScanPage> {
     final ip = _ipController.text.trim();
     if (ip.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('أدخل عنوان الهدف أولاً')),
+        const SnackBar(content: Text(AppStrings.enterTargetFirst)),
       );
       return Future.value();
     }
@@ -86,15 +86,15 @@ class _PortScanPageState extends ConsumerState<PortScanPage> {
               SwitchListTile(
                 value: _commonOnly,
                 onChanged: (v) => setState(() => _commonOnly = v),
-                title: const Text('فحص المنافذ الشائعة'),
-                subtitle: Text('${AppConstants.commonPorts.length} منفذ خدمة معروفة'),
+                title: const Text(AppStrings.scanCommonPorts),
+                subtitle: Text(AppStrings.knownPortsCount(AppConstants.commonPorts.length)),
               ),
               if (!_commonOnly)
                 TextField(
                   controller: _portsController,
                   decoration: const InputDecoration(
-                    labelText: 'نطاق المنافذ',
-                    hintText: 'مثال: 80,443,8000-8010',
+                    labelText: AppStrings.labelPortRange,
+                    hintText: AppStrings.hintPortRange,
                   ),
                 ),
               const SizedBox(height: AppSpacing.lg),
@@ -116,7 +116,7 @@ class _PortScanPageState extends ConsumerState<PortScanPage> {
                 const SizedBox(height: AppSpacing.lg),
                 AppProgressBar(
                   progress: state.progress,
-                  label: 'فُحص ${state.done} من ${state.total} منفذ',
+                  label: AppStrings.scannedPorts(state.done, state.total),
                 ),
               ],
               const SizedBox(height: AppSpacing.xl),
@@ -136,8 +136,8 @@ class _PortScanPageState extends ConsumerState<PortScanPage> {
               ] else if (!state.scanning && state.target != null)
                 const EmptyState(
                   icon: Icons.check_circle_outline_rounded,
-                  title: 'لا منافذ مفتوحة',
-                  message: 'لم يُعثر على منافذ مفتوحة في النطاق المفحوص.',
+                  title: AppStrings.noOpenPorts,
+                  message: AppStrings.noOpenPortsHint,
                 ),
             ],
           ),

@@ -100,11 +100,11 @@ class SpeedTestPage extends ConsumerWidget {
               const SizedBox(height: AppSpacing.md),
               history.when(
                 loading: () => const ShimmerCard(),
-                error: (e, _) => const Text('لا يوجد سجل بعد'),
+                error: (e, _) => const Text(AppStrings.noHistoryAlt),
                 data: (tests) {
                   if (tests.isEmpty) {
                     return const GlassCard(
-                      child: Text('لا اختبارات بعد — ابدأ اختباراً لعرض السجل.'),
+                      child: Text(AppStrings.speedNoHistory),
                     );
                   }
                   return Column(

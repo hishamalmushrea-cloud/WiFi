@@ -96,11 +96,11 @@ class NetworkScanPage extends ConsumerWidget {
                         AppProgressBar(
                           progress: scan.progress,
                           label:
-                              'تم فحص ${scan.scanned} من ${scan.total} عنوان',
+                              AppStrings.scannedAddresses(scan.scanned, scan.total),
                         ),
                         const SizedBox(height: AppSpacing.sm),
                         Text(
-                          'عُثر على ${scan.devices.length} جهاز حتى الآن',
+                          AppStrings.devicesFound(scan.devices.length),
                           style: context.textTheme.labelMedium
                               ?.copyWith(color: AppColors.accent),
                         ),
@@ -126,7 +126,7 @@ class NetworkScanPage extends ConsumerWidget {
 
                 // الخريطة الطوبولوجية.
                 if (devices.isNotEmpty) ...[
-                  SectionHeader(title: 'مخطط الشبكة'),
+                  SectionHeader(title: AppStrings.networkMap),
                   const SizedBox(height: AppSpacing.sm),
                   Center(
                     child: NetworkMapCanvas(

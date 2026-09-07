@@ -1,3 +1,4 @@
+import '../../localization/app_strings.dart';
 import 'package:flutter/material.dart';
 
 import '../../extensions/context_ext.dart';
@@ -25,7 +26,7 @@ class SectionHeader extends StatelessWidget {
         if (onSeeAll != null)
           TextButton(
             onPressed: onSeeAll,
-            child: Text('عرض الكل',
+            child: Text(AppStrings.viewAll,
                 style: TextStyle(color: AppColors.accent)),
           ),
       ],

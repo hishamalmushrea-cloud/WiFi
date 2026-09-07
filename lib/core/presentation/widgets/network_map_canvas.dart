@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../domain/entities/device.dart';
+import '../../localization/app_strings.dart';
 import '../../theme/app_colors.dart';
 import 'modern_device_card.dart' show deviceTypeIcon;
 
@@ -35,7 +36,7 @@ class NetworkMapCanvas extends StatelessWidget {
             // الراوتر في المركز.
             Center(child: _NodeChip(
               icon: Icons.router_rounded,
-              label: gateway?.displayName ?? 'الراوتر',
+              label: gateway?.displayName ?? AppStrings.routerLabel,
               color: AppColors.primary,
             )),
             // الأجهزة موزّعة على المحيط.

@@ -25,7 +25,7 @@ class HeatmapPage extends ConsumerWidget {
         floatingActionButton: FloatingActionButton.extended(
           onPressed: () => _createSurvey(context, ref),
           icon: const Icon(Icons.add_rounded),
-          label: const Text('مسح جديد'),
+          label: const Text(AppStrings.newSurvey),
         ),
         body: SafeArea(
           child: _SurveyList(onOpen: (id, name) {
@@ -39,11 +39,11 @@ class HeatmapPage extends ConsumerWidget {
   }
 
   Future<void> _createSurvey(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController(text: 'مسح المنزل');
+    final controller = TextEditingController(text: AppStrings.defaultSurveyName);
     final name = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('اسم المسح / الموقع'),
+        title: const Text(AppStrings.surveyNameTitle),
         content: TextField(controller: controller, autofocus: true),
         actions: [
           TextButton(
@@ -90,8 +90,8 @@ class _SurveyList extends ConsumerWidget {
         if (surveys.isEmpty) {
           return const EmptyState(
             icon: Icons.map_outlined,
-            title: 'لا مسوحات بعد',
-            message: 'أنشئ مسحاً لموقع وتنقّل لقياس قوة الإشارة وبناء خريطة حرارية.',
+            title: AppStrings.noSurveys,
+            message: AppStrings.noSurveysHint,
           );
         }
         return ListView.separated(
@@ -112,7 +112,7 @@ class _SurveyList extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(s.name, style: context.textTheme.titleSmall),
-                        Text('${s.samples.length} نقطة قياس',
+                        Text(AppStrings.samplesCountN(s.samples.length),
                             style: context.textTheme.labelSmall),
                       ],
                     ),
@@ -196,7 +196,7 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
             padding: context.responsivePadding,
             children: [
               Text(
-                'انقر على الخريطة في أماكن وقوفك أثناء المسح لإضافة قياسات الإشارة.',
+                AppStrings.heatmapHint,
                 style: context.textTheme.bodySmall,
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -223,15 +223,15 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     _Metric(
-                        label: 'النقاط',
+                        label: AppStrings.metricSamples,
                         value: '${_samples.length}'),
                     _Metric(
-                        label: 'متوسط الإشارة',
+                        label: AppStrings.metricAvgSignal,
                         value: _samples.isEmpty
                             ? '—'
                             : '${(_samples.map((s) => s.rssi).reduce((a, b) => a + b) / _samples.length).round()} dBm'),
                     _Metric(
-                        label: 'أضعف نقطة',
+                        label: AppStrings.metricWeakest,
                         value: _samples.isEmpty
                             ? '—'
                             : '${_samples.map((s) => s.rssi).reduce((a, b) => a < b ? a : b)} dBm'),
@@ -253,7 +253,7 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
     setState(() => _saving = false);
     result.when(
       onSuccess: (path) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('حُفظ التقرير: $path')),
+        SnackBar(content: Text(AppStrings.reportSaved(path))),
       ),
       onFailure: (f) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(f.message)),

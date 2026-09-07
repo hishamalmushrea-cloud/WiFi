@@ -60,7 +60,7 @@ class RootCheckScreen extends ConsumerWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('أدلة الفحص',
+                        Text(AppStrings.scanGuides,
                             style: context.titleSmall()),
                         const SizedBox(height: AppSpacing.sm),
                         ...status.evidence.map((e) => Padding(
@@ -183,13 +183,13 @@ class _FeatureCount extends StatelessWidget {
       children: [
         _CountBox(
           value: available.toString(),
-          label: 'ميزة متاحة',
+          label: AppStrings.featureAvailable,
           color: AppColors.success,
         ),
         Container(width: 1, height: 44, color: AppColors.darkBorder),
         _CountBox(
           value: locked.toString(),
-          label: 'ميزة متقدمة',
+          label: AppStrings.featureAdvanced,
           color: locked == 0 ? AppColors.darkTextTertiary : AppColors.warning,
         ),
       ],

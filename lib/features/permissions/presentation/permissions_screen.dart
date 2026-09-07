@@ -75,7 +75,7 @@ class _PermissionsScreenState extends ConsumerState<PermissionsScreen> {
                                 Text(req.body,
                                     style: context.textTheme.bodySmall),
                                 const SizedBox(height: 4),
-                                Text('لـ: ${req.requiredFor}',
+                                Text(AppStrings.requiredForLabel(req.requiredFor),
                                     style: context.textTheme.labelSmall
                                         ?.copyWith(color: AppColors.accent)),
                               ],

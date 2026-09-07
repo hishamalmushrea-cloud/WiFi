@@ -87,8 +87,8 @@ class _PacketCaptureScreenState extends ConsumerState<PacketCaptureScreen> {
                       ? Icons.stop_rounded
                       : Icons.play_arrow_rounded),
                   label: Text(_capturing
-                      ? 'إيقاف الالتقاط'
-                      : 'بدء التقاط الحزم'),
+                      ? AppStrings.stopCapture
+                      : AppStrings.startCapture),
                 ),
               ),
             ],
@@ -102,8 +102,8 @@ class _PacketCaptureScreenState extends ConsumerState<PacketCaptureScreen> {
                   SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
-                      'الالتقاط المباشر يتطلب جهازاً بصلاحيات Root مع أداة tcpdump. '
-                      'على الأجهزة غير المدعومة تتوفر بقية أدوات التحليل دون قيود.',
+                      AppStrings.captureNeedsRoot
+                      AppStrings.captureNeedsRoot2,
                       style: TextStyle(fontSize: 13),
                     ),
                   ),
@@ -130,8 +130,8 @@ class _PacketCaptureScreenState extends ConsumerState<PacketCaptureScreen> {
                     )
                   : const EmptyState(
                       icon: Icons.terminal_rounded,
-                      title: 'لم يبدأ الالتقاط',
-                      message: 'اضغط بدء لمراقبة الحزم على الواجهة (يتطلب Root).',
+                      title: AppStrings.captureNotStarted,
+                      message: AppStrings.captureNotStartedHint,
                     ),
             ),
           ),
@@ -154,7 +154,7 @@ class ProtocolAnalyzerScreen extends StatelessWidget {
       ('DHCP', 6, AppColors.warning, Icons.settings_ethernet_rounded),
       ('ARP', 15, AppColors.info, Icons.hub_rounded),
       ('ICMP/Ping', 4, AppColors.darkTextSecondary, Icons.ping),
-      ('HTTP (مكشوف)', 3, AppColors.error, Icons.lock_open_rounded),
+      (AppStrings.protocolHttpExposed, 3, AppColors.error, Icons.lock_open_rounded),
     ];
 
     return _AdvancedScaffold(
@@ -164,7 +164,7 @@ class ProtocolAnalyzerScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'توزيع البروتوكولات المُلتقطة (إجمالي 100 حزمة)',
+            AppStrings.protocolDistribution,
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: AppSpacing.lg),
@@ -220,7 +220,7 @@ class ProtocolAnalyzerScreen extends StatelessWidget {
                 SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(
-                    'رُصد 3 حزم HTTP غير مشفّرة — بياناتها تنتقل نصاً صريحاً.',
+                    AppStrings.httpExposedWarning,
                     style: TextStyle(fontSize: 13),
                   ),
                 ),
@@ -240,36 +240,36 @@ class MitmDetectionScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _AdvancedScaffold(
-      title: 'كشف هجمات الوسيط (MITM)',
+      title: AppStrings.mitmTitle,
       icon: Icons.shield_rounded,
       body: Column(
         children: [
           _MitmCheck(
             icon: Icons.check_circle_rounded,
             color: AppColors.success,
-            title: 'فحص بوابة ARP',
-            detail: 'عنوان MAC للبوابة ثابت — لا إعادة توجيه مزدوجة مكتشفة.',
+            title: AppStrings.mitmArpTitle,
+            detail: AppStrings.mitmArpDetail,
           ),
           const SizedBox(height: AppSpacing.sm),
           _MitmCheck(
             icon: Icons.check_circle_rounded,
             color: AppColors.success,
-            title: 'سلوك DNS',
-            detail: 'لا خوادم DNS دخيلة في تدفّق الاستعلامات.',
+            title: AppStrings.mitwDnsTitle,
+            detail: AppStrings.mitwDnsDetail,
           ),
           const SizedBox(height: AppSpacing.sm),
           _MitmCheck(
             icon: Icons.check_circle_rounded,
             color: AppColors.success,
-            title: 'شهادات TLS',
-            detail: 'الشهادات المتفاوض عليها موقّعة من جهات موثوقة.',
+            title: AppStrings.mitmTlsTitle,
+            detail: AppStrings.mitmTlsDetail,
           ),
           const SizedBox(height: AppSpacing.sm),
           _MitmCheck(
             icon: Icons.warning_amber_rounded,
             color: AppColors.warning,
-            title: 'طلبات Probe',
-            detail: 'يتطلب Root لرصد إطارات Probe-Request وكشف Karma/PineAP.',
+            title: AppStrings.mitmProbeTitle,
+            detail: AppStrings.mitmProbeDetail,
           ),
         ],
       ),

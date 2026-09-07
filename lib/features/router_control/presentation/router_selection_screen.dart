@@ -30,7 +30,7 @@ class RouterSelectionScreen extends ConsumerWidget {
     (RouterBrand.netgear, 'NETGEAR', Icons.router_rounded),
     (RouterBrand.zte, 'ZTE', Icons.router_rounded),
     (RouterBrand.tenda, 'Tenda', Icons.router_rounded),
-    (RouterBrand.generic, 'عام', Icons.help_outline_rounded),
+    (RouterBrand.generic, AppStrings.general, Icons.help_outline_rounded),
   ];
 
   @override
@@ -72,7 +72,7 @@ class RouterSelectionScreen extends ConsumerWidget {
                                 Text(AppStrings.routerAutoDetect,
                                     style: context.textTheme.titleMedium
                                         ?.copyWith(color: Colors.white)),
-                                Text('سنحاول تحديد نوع الراوتر تلقائياً',
+                                Text(AppStrings.autoDetectNote,
                                     style: context.textTheme.bodySmall
                                         ?.copyWith(color: Colors.white70)),
                               ],
@@ -84,7 +84,7 @@ class RouterSelectionScreen extends ConsumerWidget {
                       ),
                     ),
                     const SizedBox(height: AppSpacing.xl),
-                    const SectionHeader(title: 'اختر الماركة'),
+                    const SectionHeader(title: AppStrings.chooseBrand),
                     const SizedBox(height: AppSpacing.lg),
                     GridView.builder(
                       shrinkWrap: true,
@@ -251,7 +251,7 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
               Text(
                 widget.brand == null
                     ? AppStrings.routerAutoDetect
-                    : 'الاتصال بـ ${widget.brand!.name}',
+                    : AppStrings.connectingTo(widget.brand!.name),
                 style: context.textTheme.titleLarge,
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -262,7 +262,7 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
                   prefixIcon: Icon(Icons.lan_rounded),
                 ),
                 validator: (v) =>
-                    (v == null || v.trim().isEmpty) ? 'مطلوب' : null,
+                    (v == null || v.trim().isEmpty) ? AppStrings.requiredField : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
@@ -281,7 +281,7 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
                   prefixIcon: Icon(Icons.lock_outline),
                 ),
                 validator: (v) =>
-                    (v == null || v.isEmpty) ? 'مطلوب' : null,
+                    (v == null || v.isEmpty) ? AppStrings.requiredField : null,
               ),
               const SizedBox(height: AppSpacing.xl),
               FilledButton(

@@ -108,9 +108,9 @@ class _WardrivingPageState extends ConsumerState<WardrivingPage> {
                 child: _current == null
                     ? EmptyState(
                         icon: Icons.map_rounded,
-                        title: 'ابدأ التسجيل لعرض الخريطة',
-                        message: 'يتطلب صلاحية الموقع.',
-                        actionLabel: _recording ? 'جارٍ التسجيل…' : AppStrings.start,
+                        title: AppStrings.mapStartRecording,
+                        message: AppStrings.needsLocation,
+                        actionLabel: _recording ? AppStrings.recordingDots : AppStrings.start,
                         onAction: _recording ? null : _toggleRecording,
                       )
                     : Stack(
@@ -150,7 +150,7 @@ class _WardrivingPageState extends ConsumerState<WardrivingPage> {
                                       ),
                                     ),
                                     const SizedBox(width: AppSpacing.sm),
-                                    Text('جارٍ التسجيل • ${_markers.length} نقطة',
+                                    Text(AppStrings.recordingPoints(_markers.length),
                                         style: context.textTheme.labelMedium),
                                   ],
                                 ),
@@ -170,9 +170,9 @@ class _WardrivingPageState extends ConsumerState<WardrivingPage> {
                       data: (s) => Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _StatChip(label: 'شبكات', value: '${s.totalNetworks}'),
-                          _StatChip(label: 'المسافة', value: '${s.distanceKm} كم'),
-                          _StatChip(label: 'مفتوحة', value: '${s.openNetworks}'),
+                          _StatChip(label: AppStrings.statNetworks, value: '${s.totalNetworks}'),
+                          _StatChip(label: AppStrings.statDistance, value: AppStrings.distanceKm(s.distanceKm)),
+                          _StatChip(label: AppStrings.statOpen, value: '${s.openNetworks}'),
                         ],
                       ),
                     ),
@@ -198,7 +198,7 @@ class _WardrivingPageState extends ConsumerState<WardrivingPage> {
                             child: OutlinedButton.icon(
                               onPressed: _dropPoint,
                               icon: const Icon(Icons.add_location_alt_rounded),
-                              label: const Text('تسجيل نقطة'),
+                              label: const Text(AppStrings.dropPoint),
                             ),
                           ),
                         ],
@@ -219,7 +219,7 @@ class _WardrivingPageState extends ConsumerState<WardrivingPage> {
     if (!mounted) return;
     result.when(
       onSuccess: (path) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('صُدّر الملف: $path')),
+        SnackBar(content: Text(AppStrings.fileExported(path))),
       ),
       onFailure: (f) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(f.message)),

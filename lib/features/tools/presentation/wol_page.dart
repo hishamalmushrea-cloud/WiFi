@@ -38,7 +38,7 @@ class _WakeOnLanPageState extends ConsumerState<WakeOnLanPage> {
     setState(() {
       _busy = false;
       result.when(
-        onSuccess: (_) => _result = 'أُرسلت حزمة الإيقاظ بنجاح ✓',
+        onSuccess: (_) => _result = AppStrings.wolSent,
         onFailure: (f) => _result = f.message,
       );
     });
@@ -60,7 +60,7 @@ class _WakeOnLanPageState extends ConsumerState<WakeOnLanPage> {
                     TextField(
                       controller: _mac,
                       decoration: const InputDecoration(
-                        labelText: 'عنوان MAC للجهاز',
+                        labelText: AppStrings.wolMacLabel,
                         hintText: 'AA:BB:CC:DD:EE:FF',
                         prefixIcon: Icon(Icons.memory_rounded),
                       ),
@@ -69,7 +69,7 @@ class _WakeOnLanPageState extends ConsumerState<WakeOnLanPage> {
                     TextField(
                       controller: _ip,
                       decoration: const InputDecoration(
-                        labelText: 'عنوان البث (Broadcast)',
+                        labelText: AppStrings.wolBroadcastLabel,
                         hintText: '192.168.1.255',
                         prefixIcon: Icon(Icons.lan_rounded),
                       ),
@@ -79,7 +79,7 @@ class _WakeOnLanPageState extends ConsumerState<WakeOnLanPage> {
                       controller: _port,
                       keyboardType: TextInputType.number,
                       decoration: const InputDecoration(
-                        labelText: 'المنفذ',
+                        labelText: AppStrings.labelPort,
                         prefixIcon: Icon(Icons.settings_ethernet_rounded),
                       ),
                     ),
@@ -96,7 +96,7 @@ class _WakeOnLanPageState extends ConsumerState<WakeOnLanPage> {
                         child: CircularProgressIndicator(
                             color: Colors.white, strokeWidth: 2))
                     : const Icon(Icons.power_settings_new_rounded),
-                label: const Text('إيقاظ الجهاز'),
+                label: const Text(AppStrings.wolWakeDevice),
               ),
               if (_result != null) ...[
                 const SizedBox(height: AppSpacing.lg),

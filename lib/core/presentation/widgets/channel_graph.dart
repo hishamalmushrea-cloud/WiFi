@@ -1,3 +1,4 @@
+import '../../localization/app_strings.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
@@ -24,7 +25,7 @@ class ChannelGraph extends StatelessWidget {
     if (accessPoints.isEmpty) {
       return const SizedBox(
         height: 200,
-        child: Center(child: Text('لا توجد بيانات')),
+        child: Center(child: Text(AppStrings.noData)),
       );
     }
 

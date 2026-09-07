@@ -39,9 +39,9 @@ class DeviceDetailPage extends ConsumerWidget {
           title: Text(device?.displayName ?? AppStrings.deviceDetails),
           bottom: const TabBar(
             tabs: [
-              Tab(text: 'معلومات'),
-              Tab(text: 'السجل'),
-              Tab(text: 'إجراءات'),
+              Tab(text: AppStrings.information),
+              Tab(text: AppStrings.labelHistory),
+              Tab(text: AppStrings.actions),
             ],
           ),
         ),
@@ -158,8 +158,8 @@ class DeviceDetailPage extends ConsumerWidget {
                       if (history.isEmpty) {
                         return const EmptyState(
                           icon: Icons.history_rounded,
-                          title: 'لا سجل بعد',
-                          message: 'سيُسجَّل ظهور الجهاز عبر الفحوصات القادمة',
+                          title: AppStrings.noHistory,
+                          message: AppStrings.deviceSeenNote,
                         );
                       }
                       return ListView.separated(
@@ -186,8 +186,8 @@ class DeviceDetailPage extends ConsumerWidget {
                                 Expanded(
                                   child: Text(
                                     h.isOnline
-                                        ? 'متصل'
-                                        : 'غير متصل',
+                                        ? AppStrings.connected
+                                        : AppStrings.disconnected,
                                     style: context.textTheme.bodyMedium,
                                   ),
                                 ),
@@ -226,7 +226,7 @@ class DeviceDetailPage extends ConsumerWidget {
                             ? Icons.star_rounded
                             : Icons.star_outline_rounded,
                         label: device.isFavorite
-                            ? 'إزالة من المفضلة'
+                            ? AppStrings.deviceUnfavorite
                             : AppStrings.deviceFavorite,
                         color: AppColors.warning,
                         onTap: () => actions.toggleFavorite(device),
@@ -253,8 +253,8 @@ class DeviceDetailPage extends ConsumerWidget {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 SnackBar(
                                   content: Text(vulns.isEmpty
-                                      ? 'لا ثغرات مكتشفة على هذا الجهاز'
-                                      : 'عُثر على ${vulns.length} تحذير أمني'),
+                                      ? AppStrings.noVulnerabilities
+                                      : AppStrings.vulnerabilitiesFound(vulns.length)),
                                 ),
                               );
                             },

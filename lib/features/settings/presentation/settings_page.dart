@@ -81,11 +81,11 @@ class SettingsPage extends ConsumerWidget {
                           ? AppColors.success
                           : AppColors.darkTextSecondary,
                     ),
-                    title: const Text('حالة Root / Jailbreak'),
+                    title: const Text(AppStrings.rootStatusTitle),
                     subtitle: Text(
                       root.isRooted
-                          ? 'صلاحيات الجذر متاحة — الميزات المتقدمة مفعّلة'
-                          : 'غير متاحة — 96 ميزة أساسية تعمل',
+                          ? AppStrings.rootAvailable
+                          : AppStrings.rootNotAvailable,
                     ),
                   ),
                 ],
@@ -126,8 +126,8 @@ class SettingsPage extends ConsumerWidget {
                     color: AppColors.secondary),
                 title: const Text(AppStrings.settingsWigleToken),
                 subtitle: Text(settings.isWigleConfigured
-                    ? 'المفتاح مُعدّ ✓'
-                    : 'غير مُعدّ — أدخل مفتاح WiGLE API'),
+                    ? AppStrings.wigleKeySet
+                    : AppStrings.wigleKeyMissing),
                 trailing: const Icon(Icons.edit_rounded),
                 onTap: () => _wigleDialog(context, ref),
               ),
@@ -141,8 +141,8 @@ class SettingsPage extends ConsumerWidget {
                 loading: () => const ShimmerBox(height: 40),
                 error: (_, __) => const ListTile(
                     leading: Icon(Icons.info_outline_rounded),
-                    title: Text('نت كونترول'),
-                    subtitle: Text('الإصدار: 1.0.0')),
+                    title: const Text(AppStrings.appName),
+                    subtitle: Text(AppStrings.appVersion)),
                 data: (info) => ListTile(
                   leading: const Icon(Icons.info_outline_rounded),
                   title: Text(info.appName),
@@ -168,7 +168,7 @@ class SettingsPage extends ConsumerWidget {
         content: TextField(
           controller: controller,
           decoration: const InputDecoration(
-            hintText: 'Basic ... أو رمز WiGLE',
+            hintText: AppStrings.wigleKeyHint,
           ),
         ),
         actions: [
@@ -212,7 +212,7 @@ final _appInfoProvider = FutureProvider<AppInfo>((ref) async {
   return result.when(
     onSuccess: (info) => info,
     onFailure: (_) => const AppInfo(
-        appName: 'نت كونترول',
+        appName: AppStrings.appName,
         version: '1.0.0',
         buildNumber: '1',
         packageName: 'com.netcontrol.app'),

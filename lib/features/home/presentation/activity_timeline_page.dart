@@ -96,8 +96,8 @@ class ActivityTimelinePage extends ConsumerWidget {
               if (list.isEmpty) {
                 return const EmptyState(
                   icon: Icons.timeline_rounded,
-                  title: 'لا نشاط بعد',
-                  message: 'ستظهر هنا التنبيهات الأمنية واختبارات السرعة.',
+                  title: AppStrings.noActivity,
+                  message: AppStrings.noActivityHint,
                 );
               }
               return ListView.separated(

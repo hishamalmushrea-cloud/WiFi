@@ -97,7 +97,7 @@ class ModernDeviceCard extends StatelessWidget {
                 const _Badge(icon: Icons.block_rounded, color: AppColors.error),
               if (device.isRandomMac)
                 _Badge(icon: Icons.shuffle_rounded, color: AppColors.accent,
-                    tooltip: 'MAC عشوائي'),
+                    tooltip: AppStrings.randomMac),
               if (device.vendor != null)
                 _Badge(
                   icon: Icons.business_rounded,

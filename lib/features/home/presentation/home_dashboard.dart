@@ -92,7 +92,7 @@ class HomeDashboard extends ConsumerWidget {
                         icon: Icons.devices_other_rounded,
                         value: '$onlineCount',
                         label: AppStrings.statOnlineDevices,
-                        subtitle: 'من $totalCount إجمالي',
+                        subtitle: AppStrings.onlineOfTotal(totalCount),
                         gradient: AppColors.gradientPrimary,
                         glowColor: AppColors.glowPrimary,
                       );
@@ -260,7 +260,7 @@ class HomeDashboard extends ConsumerWidget {
                       LinearProgressIndicator(value: scan.progress),
                       const SizedBox(height: AppSpacing.sm),
                       Text(
-                        '${scan.scanned} / ${scan.total} • ${scan.devices.length} جهاز',
+                        AppStrings.scanProgress(scan.scanned, scan.total, scan.devices.length),
                         style: context.textTheme.labelSmall,
                       ),
                     ],
@@ -276,7 +276,7 @@ class HomeDashboard extends ConsumerWidget {
 
   void _comingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('ستتوفر في التحديث القادم')),
+      const SnackBar(content: Text(AppStrings.comingSoon)),
     );
   }
 

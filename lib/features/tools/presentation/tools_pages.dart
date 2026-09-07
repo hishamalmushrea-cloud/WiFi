@@ -99,7 +99,7 @@ class _PingToolPageState extends ConsumerState<PingToolPage> {
     return _ToolScaffold(
       title: AppStrings.toolPing,
       controller: _controller,
-      hint: '8.8.8.8 أو example.com',
+      hint: AppStrings.hintPing,
       busy: _busy,
       onRun: _run,
       result: _result == null
@@ -108,12 +108,12 @@ class _PingToolPageState extends ConsumerState<PingToolPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _row('الهدف', _result!.host),
-                  _row('أُرسل / استُلم',
+                  _row(AppStrings.target, _result!.host),
+                  _row(AppStrings.labelSentReceived,
                       '${_result!.sentCount} / ${_result!.receivedCount}'),
-                  _row('فقد الحزم',
+                  _row(AppStrings.labelPacketLoss,
                       '${_result!.packetLoss.toStringAsFixed(0)}%'),
-                  _row('أدنى / متوسط / أعلى',
+                  _row(AppStrings.labelMinAvgMax,
                       '${_result!.minMs?.toStringAsFixed(0) ?? "-"} / '
                           '${_result!.avgMs?.toStringAsFixed(0) ?? "-"} / '
                           '${_result!.maxMs?.toStringAsFixed(0) ?? "-"} ${AppStrings.ms}'),
@@ -220,11 +220,11 @@ class _WhoisToolPageState extends ConsumerState<WhoisToolPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _row('الاستعلام', _result!.query),
+                  _row(AppStrings.labelQuery, _result!.query),
                   if (_result!.country != null)
-                    _row('الدولة', _result!.country!),
+                    _row(AppStrings.labelCountry, _result!.country!),
                   if (_result!.registrar != null)
-                    _row('جهة التسجيل', _result!.registrar!),
+                    _row(AppStrings.labelRegistrar, _result!.registrar!),
                 ],
               ),
             ),
@@ -260,7 +260,7 @@ class _DnsToolPageState extends ConsumerState<DnsToolPage> {
     return _ToolScaffold(
       title: AppStrings.toolDns,
       controller: _controller,
-      hint: 'example.com (سجل A)',
+      hint: AppStrings.hintDns,
       busy: _busy,
       onRun: _run,
       result: Column(
@@ -322,12 +322,12 @@ class _SubnetCalculatorPageState extends State<SubnetCalculatorPage> {
                   TextField(
                     controller: _ip,
                     decoration: const InputDecoration(
-                      labelText: 'عنوان IP',
+                      labelText: AppStrings.labelIpAddress,
                       prefixIcon: Icon(Icons.lan_rounded),
                     ),
                   ),
                   const SizedBox(height: AppSpacing.lg),
-                  Text('البادئة: /${_prefix.toInt()}',
+                  Text(AppStrings.prefixLabel(_prefix.toInt()),
                       style: context.textTheme.titleSmall),
                   Slider(
                     value: _prefix,
@@ -355,12 +355,12 @@ class _SubnetCalculatorPageState extends State<SubnetCalculatorPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           _row('CIDR', _info!.cidr),
-                          _row('قناع الشبكة', _info!.subnetMask),
-                          _row('عنوان الشبكة', _info!.networkAddress),
-                          _row('عنوان البث', _info!.broadcastAddress),
-                          _row('أول مضيف', _info!.firstHost),
-                          _row('آخر مضيف', _info!.lastHost),
-                          _row('المضيفون المتاحون',
+                          _row(AppStrings.labelSubnetMask, _info!.subnetMask),
+                          _row(AppStrings.labelNetworkAddress, _info!.networkAddress),
+                          _row(AppStrings.labelBroadcastAddress, _info!.broadcastAddress),
+                          _row(AppStrings.labelFirstHost, _info!.firstHost),
+                          _row(AppStrings.labelLastHost, _info!.lastHost),
+                          _row(AppStrings.labelUsableHosts,
                               '${_info!.usableHosts}'),
                         ],
                       ),
@@ -458,14 +458,14 @@ class _SslToolPageState extends ConsumerState<SslToolPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _row('المضيف', _info!.host),
-                  if (_info!.issuer != null) _row('المُصدِر', _info!.issuer!),
+                  _row(AppStrings.labelHost, _info!.host),
+                  if (_info!.issuer != null) _row(AppStrings.labelIssuer, _info!.issuer!),
                   if (_info!.validTo != null)
-                    _row('تنتهي في', _info!.validTo!.formatted),
-                  _row('الحالة',
-                      _info!.isExpired ? 'منتهية الصلاحية' : 'سارية'),
-                  _row('موقّعة ذاتياً',
-                      _info!.isSelfSigned ? 'نعم' : 'لا'),
+                    _row(AppStrings.labelValidTo, _info!.validTo!.formatted),
+                  _row(AppStrings.status,
+                      _info!.isExpired ? AppStrings.sslExpired : AppStrings.sslValid),
+                  _row(AppStrings.sslSelfSigned,
+                      _info!.isSelfSigned ? AppStrings.yes : AppStrings.no),
                 ],
               ),
             ),
