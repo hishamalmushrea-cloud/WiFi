@@ -3,8 +3,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/constants/app_constants.dart';
 import 'core/localization/app_strings.dart';
-import 'core/presentation/boot_screen.dart';
 import 'core/theme/app_theme.dart';
+import 'features/splash/presentation/app_gate.dart';
 
 /// الجذر البصري للتطبيق.
 ///
@@ -33,7 +33,7 @@ class NetControlApp extends StatelessWidget {
       darkTheme: AppTheme.dark,
       themeMode: ThemeMode.dark,
 
-      home: const BootScreen(),
+      home: const AppGate(),
       builder: (context, child) {
         // نوسّط المحتوى ونحدّد أقصى عرض على الشاشات الكبيرة
         // (ديسكتوب/تابلت أفقي) حسب قاعدة التصميم المتجاوب.

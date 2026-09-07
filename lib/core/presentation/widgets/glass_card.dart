@@ -15,6 +15,7 @@ class GlassCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.margin,
     this.borderRadius = AppSpacing.radiusLg,
     this.gradient,
     this.glowColor,
@@ -24,6 +25,7 @@ class GlassCard extends StatelessWidget {
 
   final Widget child;
   final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? margin;
   final double borderRadius;
 
   /// تدرج لوني يغطي البطاقة (يخفي المظهر الزجاجي الشفاف جزئياً).
@@ -84,7 +86,7 @@ class GlassCard extends StatelessWidget {
     );
 
     // الضبابية فوق المحتوى الشفاف تعطي تأثير الزجاج.
-    final blurred = ClipRRect(
+    Widget blurred = ClipRRect(
       borderRadius: radius,
       child: BackdropFilter(
         filter: ImageFilter.blur(
@@ -94,6 +96,8 @@ class GlassCard extends StatelessWidget {
         child: content,
       ),
     );
+
+    if (margin != null) blurred = Padding(padding: margin!, child: blurred);
 
     if (onTap == null) return blurred;
     return Material(
