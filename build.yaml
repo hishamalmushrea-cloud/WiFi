@@ -1,0 +1,17 @@
+# إعدادات توليد الكود (build_runner)
+# ─────────────────────────────────────────────────────────────
+# نُخزّن التواريخ كنصوص ISO-8601 لتسهيل النسخ الاحتياطي والتصدير
+# وضمان عدم اختلاف التمثيل بين المنصات.
+targets:
+  $default:
+    builders:
+      drift_dev:
+        options:
+          store_date_time_values_as_text: true
+          # أسماء الكلاسات المولّدة تتبع نمط <Table>Row لتمييزها
+          # عن كيانات Domain Layer التي ستبنى في المرحلة 4.
+          data_class_to_companion: true
+      freezed:
+        options:
+          # نفعّل نسخ JSON تلقائياً في نماذج freezed
+          json: true

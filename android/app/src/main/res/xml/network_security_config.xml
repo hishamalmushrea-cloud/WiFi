@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- السماح بحركة HTTP (cleartext) لأن واجهات إدارة الراوترات المنزلية
+     تعمل غالباً على http://192.168.x.x بدون شهادة TLS. -->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

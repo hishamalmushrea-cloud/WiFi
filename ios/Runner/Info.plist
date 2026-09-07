@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ar</string>
+    <key>CFBundleDisplayName</key>
+    <string>نت كونترول</string>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleName</key>
+    <string>netcontrol</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(FLUTTER_BUILD_NAME)</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleVersion</key>
+    <string>$(FLUTTER_BUILD_NUMBER)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+
+    <!-- ══════════════ الصلاحيات وأوصافها (إلزامي لـ App Review) ══════════════ -->
+    <!-- الموقع: مطلوب لتحليل WiFi، Wardriving، والخرائط الحرارية -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>يستخدم نت كونترول موقعك لتحليل شبكات الواي فاي القريبة، تسجيل نقاط الوصول على الخريطة، وإنشاء خرائط حرارية لقوة الإشارة.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>يحتاج التطبيق صلاحية الموقع في الخلفية لمتابعة تسجيل الشبكات أثناء التنقل (Wardriving) وإرسال تنبيهات أمنية فورية.</string>
+    <key>NSLocationAlwaysUsageDescription</key>
+    <string>متابعة تحليل الشبكة وتنبيهات الأمان أثناء عمل التطبيق في الخلفية.</string>
+
+    <!-- البلوتوث: فحص أجهزة BLE القريبة -->
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>يستخدم نت كونترول البلوتوث لفحص أجهزة بلوتوث وBLE القريبة منك وعرضها في قسم التحليل.</string>
+    <key>NSBluetoothPeripheralUsageDescription</key>
+    <string>فحص أجهزة البلوتوث القريبة.</string>
+
+    <!-- الشبكة المحلية: اكتشاف الأجهزة عبر mDNS/Bonjour والفحص -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>يحتاج نت كونترول الوصول للشبكة المحلية لاكتشاف الأجهزة المتصلة، فحص المنافذ، والتواصل مع الراوتر.</string>
+
+    <!-- وصول mDNS/Bonjour للخدمات المحلية (iOS 14+) -->
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_http._tcp</string>
+        <string>_https._tcp</string>
+        <string>_ssh._tcp</string>
+        <string>_telnet._tcp</string>
+        <string>_ftp._tcp</string>
+        <string>_smb._tcp</string>
+        <string>_airplay._tcp</string>
+        <string>_googlecast._tcp</string>
+        <string>_hap._tcp</string>
+        <string>_printer._tcp</string>
+        <string>_ipp._tcp</string>
+        <string>_device-info._tcp</string>
+        <string>_pdl-datastream._tcp</string>
+    </array>
+
+    <!-- الكاميرا: مسح رموز QR للانضمام للشبكات -->
+    <key>NSCameraUsageDescription</key>
+    <string>تُستخدم الكاميرا لمسح رموز QR الخاصة بشبكات الواي فاي للانضمام السريع.</string>
+
+    <!-- Face ID: قفل التطبيق -->
+    <key>NSFaceIDUsageDescription</key>
+    <string>يستخدم نت كونترول بصمة الوجه لقفل التطبيق وحماية بيانات الشبكة وكلمات المرور.</string>
+
+    <!-- ══════════════ إعدادات النظام ══════════════ -->
+    <key>UILaunchStoryboardName</key>
+    <string>LaunchScreen</string>
+    <key>UIMainStoryboardFile</key>
+    <string>Main</string>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UIViewControllerBasedStatusBarAppearance</key>
+    <false/>
+
+    <!-- وضع المشاركة والتصدير -->
+    <key>LSSupportsOpeningDocumentsInPlace</key>
+    <true/>
+    <key>UIFileSharingEnabled</key>
+    <true/>
+
+    <!-- تصريح التشفير: التطبيق يستخدم تشفيراً قياسياً (مستثنى من التسجيل) -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
+    <key>CADisableMinimumFrameDurationOnPhone</key>
+    <true/>
+    <key>UIApplicationSupportsIndirectInputEvents</key>
+    <true/>
+</dict>
+</plist>

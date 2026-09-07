@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- خلفية الإقلاع: نفس خلفية التطبيق الداكنة (#0A0E1A) -->
+    <color name="launch_background">#FF0A0E1A</color>
+    <!-- خلفية أيقونة التطبيق التكيفية: Indigo -->
+    <color name="ic_launcher_background">#FF6366F1</color>
+</resources>
