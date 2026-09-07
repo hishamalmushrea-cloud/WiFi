@@ -34,8 +34,20 @@ class CryptoUtils {
   static Uint8List randomBytes(int length) =>
       _cipherRandom().nextBytes(length);
 
-  /// مفتاح عشوائي قابل للتخزين في Secure Storage (مفتاح SQLCipher).
+  /// مفتاح عشوائي Base64 (لحاجات عامة).
   static String generateDatabaseKey() => base64.encode(randomBytes(_keyLength));
+
+  /// مفتاح خام 32 بايت بصيغة hex (64 حرفاً) — الصيغة التي يفضّلها
+  /// SQLCipher عبر `PRAGMA key = "x'…'"` لأنه يتخطى اشتقاق المفتاح
+  /// من عبارة نصية فيستخدم الـ 256 بت كاملةً دون إضعافها.
+  static String generateDatabaseKeyHex() {
+    final bytes = randomBytes(_keyLength);
+    final buffer = StringBuffer();
+    for (final b in bytes) {
+      buffer.write(b.toRadixString(16).padLeft(2, '0'));
+    }
+    return buffer.toString();
+  }
 
   /// يشتق مفتاح AES-256 من عبارة مرور + salt عبر PBKDF2/SHA-256.
   static KeyParameter _deriveKey(String passphrase, Uint8List salt) {

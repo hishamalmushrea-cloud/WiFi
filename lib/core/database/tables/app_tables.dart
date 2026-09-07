@@ -10,6 +10,8 @@ part of '../app_database.dart';
 //  1) الأجهزة المكتشفة على الشبكة
 // ════════════════════════════════════════════════════════════════
 @DataClassName('DeviceRow')
+@TableIndex(name: 'idx_devices_last_seen', columns: {#lastSeen})
+@TableIndex(name: 'idx_devices_blocked', columns: {#isBlocked})
 class Devices extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get ip => text()();
@@ -37,6 +39,7 @@ class Devices extends Table {
 //  2) السجل التاريخي لكل جهاز (حالة الاتصال والإشارة عبر الزمن)
 // ════════════════════════════════════════════════════════════════
 @DataClassName('DeviceHistoryRow')
+@TableIndex(name: 'idx_history_device_time', columns: {#deviceId, #timestamp})
 class DeviceHistory extends Table {
   IntColumn get id => integer().autoIncrement()();
   // نستخدم حذف متتالٍ (cascade) حتى لا تتراكم سجول يتيمة.
@@ -54,6 +57,8 @@ class DeviceHistory extends Table {
 //  3) التنبيهات الأمنية
 // ════════════════════════════════════════════════════════════════
 @DataClassName('SecurityAlertRow')
+@TableIndex(name: 'idx_alerts_timestamp', columns: {#timestamp})
+@TableIndex(name: 'idx_alerts_resolved', columns: {#isResolved})
 class SecurityAlerts extends Table {
   IntColumn get id => integer().autoIncrement()();
   // arp_spoofing | rogue_dhcp | evil_twin | deauth | intruder …
@@ -76,6 +81,7 @@ class SecurityAlerts extends Table {
 //  4) نتائج اختبارات السرعة
 // ════════════════════════════════════════════════════════════════
 @DataClassName('SpeedTestRow')
+@TableIndex(name: 'idx_speed_tests_time', columns: {#timestamp})
 class SpeedTests extends Table {
   IntColumn get id => integer().autoIncrement()();
   RealColumn get downloadMbps => real().nullable()();
@@ -96,6 +102,8 @@ class SpeedTests extends Table {
 //  5) أحداث الشبكة (اتصال/انفصال/انقطاع/تغير سرعة)
 // ════════════════════════════════════════════════════════════════
 @DataClassName('NetworkEventRow')
+@TableIndex(name: 'idx_events_time', columns: {#timestamp})
+@TableIndex(name: 'idx_events_device', columns: {#deviceId})
 class NetworkEvents extends Table {
   IntColumn get id => integer().autoIncrement()();
   // device_connected | device_disconnected | outage | speed_change
@@ -144,6 +152,9 @@ class WifiSurveys extends Table {
 //  8) بيانات Wardriving (الشبكات + إحداثيات GPS)
 // ════════════════════════════════════════════════════════════════
 @DataClassName('WardrivingDatumRow')
+@TableIndex(name: 'idx_wardriving_bssid', columns: {#bssid})
+@TableIndex(name: 'idx_wardriving_time', columns: {#timestamp})
+@TableIndex(name: 'idx_wardriving_uploaded', columns: {#uploaded})
 class WardrivingData extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get ssid => text().nullable()();
@@ -164,6 +175,7 @@ class WardrivingData extends Table {
 //  9) نتائج فحص المنافذ
 // ════════════════════════════════════════════════════════════════
 @DataClassName('PortScanResultRow')
+@TableIndex(name: 'idx_ports_device', columns: {#deviceId})
 class PortScanResults extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get deviceId =>
@@ -182,6 +194,7 @@ class PortScanResults extends Table {
 // 10) الثغرات المكتشفة لكل جهاز
 // ════════════════════════════════════════════════════════════════
 @DataClassName('VulnerabilityRow')
+@TableIndex(name: 'idx_vulns_device', columns: {#deviceId})
 class Vulnerabilities extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get deviceId =>
@@ -201,6 +214,8 @@ class Vulnerabilities extends Table {
 // 11) الجدول الزمني لنشاط الاتصالات
 // ════════════════════════════════════════════════════════════════
 @DataClassName('ActivityTimelineRow')
+@TableIndex(name: 'idx_timeline_time', columns: {#startTime})
+@TableIndex(name: 'idx_timeline_device', columns: {#deviceId})
 class ActivityTimeline extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get deviceId =>
@@ -221,6 +236,7 @@ class ActivityTimeline extends Table {
 // 12) سجلات DNS
 // ════════════════════════════════════════════════════════════════
 @DataClassName('DnsRecordRow')
+@TableIndex(name: 'idx_dns_domain', columns: {#domain})
 class DnsRecords extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get domain => text()();
@@ -251,6 +267,8 @@ class SavedNetworks extends Table {
 // 14) نقاط الوصول المكتشفة (تحليل WiFi / Wardriving)
 // ════════════════════════════════════════════════════════════════
 @DataClassName('AccessPointRow')
+@TableIndex(name: 'idx_aps_channel', columns: {#channel})
+@TableIndex(name: 'idx_aps_band', columns: {#band})
 class AccessPoints extends Table {
   IntColumn get id => integer().autoIncrement()();
   TextColumn get ssid => text().nullable()();
@@ -273,6 +291,7 @@ class AccessPoints extends Table {
 // 15) تحليل القنوات (نتيجة دورية لتقييم الازدحام)
 // ════════════════════════════════════════════════════════════════
 @DataClassName('ChannelAnalysisRow')
+@TableIndex(name: 'idx_channel_analysis_band', columns: {#band})
 class ChannelAnalysis extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get channel => integer()();
