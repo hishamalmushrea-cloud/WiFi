@@ -72,7 +72,7 @@ class AppDatabase extends _$AppDatabase {
       AppDatabase(executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -85,9 +85,12 @@ class AppDatabase extends _$AppDatabase {
         },
         onUpgrade: (migrator, from, to) async {
           // خارطة ترحيل متدرجة: كل خطوة تُنفّذ مرة واحدة وبالترتيب.
-          // مثال عند إضافة جدول/عمود مستقبلاً:
-          //   if (from < 2) { await migrator.addColumn(...); }
           AppLogger.info('ترحيل قاعدة البيانات $from → $to', tag: 'Database');
+
+          // v2: عينات الخريطة الحرارية كعمود JSON على جدول المسوحات.
+          if (from < 2) {
+            await migrator.addColumn(wifiSurveys, wifiSurveys.samplesJson);
+          }
         },
       );
 }

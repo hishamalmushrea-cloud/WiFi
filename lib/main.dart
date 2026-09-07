@@ -3,20 +3,22 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'app.dart';
+import 'core/data/datasources/local/settings_local_datasource.dart';
 import 'core/utils/app_logger.dart';
 
 /// نقطة دخول التطبيق.
 ///
-/// نلتقط كل أخطاء Flutter وأخطاء المنطقة (Zone) هنا حتى لا
-/// تنهار التجربة بصمت؛ يُسجَّل الخطأ باللوجر ويستمر التطبيق.
+/// نهيّئ الخدمات التي تحتاج تهيئة غير متزامنة (SharedPreferences)
+/// قبل بناء الواجهة، ونمرّرها عبر ProviderScope.override حتى لا
+/// تضطر أي طبقة لانتظارها وقت التشغيل.
 Future<void> main() async {
   await runZonedGuarded<Future<void>>(
     () async {
       WidgetsFlutterBinding.ensureInitialized();
 
-      // شريط الحالة شفاف ليندمج مع خلفية التطبيق الداكنة.
       SystemChrome.setSystemUIOverlayStyle(
         const SystemUiOverlayStyle(
           statusBarColor: Colors.transparent,
@@ -25,6 +27,8 @@ Future<void> main() async {
           systemNavigationBarIconBrightness: Brightness.light,
         ),
       );
+
+      final prefs = await SharedPreferences.getInstance();
 
       FlutterError.onError = (FlutterErrorDetails details) {
         AppLogger.error(
@@ -35,15 +39,19 @@ Future<void> main() async {
       };
 
       WidgetsBinding.instance.platformDispatcher.onError = (error, stack) {
-        AppLogger.error(
-          'خطأ غير ممسوك على مستوى المنصة',
-          error: error,
-          stackTrace: stack,
-        );
+        AppLogger.error('خطأ غير ممسوك على مستوى المنصة',
+            error: error, stackTrace: stack);
         return true;
       };
 
-      runApp(const ProviderScope(child: NetControlApp()));
+      runApp(
+        ProviderScope(
+          overrides: [
+            sharedPreferencesProvider.overrideWithValue(prefs),
+          ],
+          child: const NetControlApp(),
+        ),
+      );
     },
     (error, stackTrace) {
       AppLogger.error(

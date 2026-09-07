@@ -144,6 +144,9 @@ class WifiSurveys extends Table {
   TextColumn get imageUrl => text().nullable()();
   RealColumn get latitude => real().nullable()();
   RealColumn get longitude => real().nullable()();
+  // عينات الإشارة للخريطة الحرارية تُخزَّن كـ JSON (قائمة نقاط)
+  // حتى لا نُحمّل الجدول بعلاقة إضافية، وتُقرأ دفعة واحدة مع المسح.
+  TextColumn get samplesJson => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
   DateTimeColumn get updatedAt => dateTime().withDefault(currentDateAndTime)();
 }
