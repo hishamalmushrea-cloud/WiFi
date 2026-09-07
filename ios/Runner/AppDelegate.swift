@@ -4,11 +4,10 @@ import UIKit
 /**
  * نقطة دخول تطبيق iOS.
  *
- * القنوات الأصلية (Method Channels) تُسجَّل هنا في PHASE 11:
- *  - JailbreakDetectorChannel : فحص الجيلبريك بطرق متعددة
- *  - NetworkChannel           : فحص الشبكة عبر Network.framework
- *
- * نبقي الـ Delegate في أبسط صورة الآن حتى تعمل توليدات Flutter تلقائياً.
+ * تسجّل الجسور الأصلية:
+ *  - JailbreakDetector : كشف الجيلبريك بخمس طرق
+ *  - IosNetworkChannel : معلومات الشبكة (ARP/مسح WiFi غير متاحين
+ *    على iOS بدون جيلبريك فيُعاملان بتدهور آمن في Dart).
  */
 @main
 @objc class AppDelegate: FlutterAppDelegate {
@@ -19,7 +18,9 @@ import UIKit
         let controller = window?.rootViewController as? FlutterViewController
 
         if let controller = controller {
-            // تسجيل القنوات الأصلية سيُضاف هنا في PHASE 11.
+            let registrar = self.registrar(forPlugin: "NetControlNative")!
+            JailbreakDetector.register(with: registrar)
+            IosNetworkChannel.register(with: registrar)
             _ = controller
         }
 

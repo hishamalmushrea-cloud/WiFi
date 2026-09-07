@@ -105,5 +105,15 @@
     <true/>
     <key>UIApplicationSupportsIndirectInputEvents</key>
     <true/>
+
+    <!-- مخططات تطبيقات الجيلبريك: للتحقق من وجودها (canOpenURL) -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>cydia</string>
+        <string>sileo</string>
+        <string>zbra</string>
+        <string>filza</string>
+        <string>undecimus</string>
+    </array>
 </dict>
 </plist>

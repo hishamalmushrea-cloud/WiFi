@@ -50,9 +50,16 @@ class WifiAnalysisRepositoryImpl implements WifiAnalysisRepository {
             .toList();
       } on MissingPluginException {
         AppLogger.warning(
-          'قناة مسح WiFi غير متاحة بعد (PHASE 11) — عرض المحفوظ',
+          'قناة مسح WiFi غير متاحة — عرض المحفوظ',
           tag: 'WifiScan',
         );
+        final saved = await _db.accessPointDao.watchAll().first;
+        aps = saved.map(WifiMapper.toAccessPointEntity).toList();
+      } on PlatformException catch (e) {
+        // iOS: لا يتيح مسح الشبكات المحيطة؛ أو صلاحية مرفوضة على Android —
+        // نعود للنتائج المحفوظة بدل إفشال الشاشة كاملة (تدهور آمن).
+        AppLogger.warning('تعذّر مسح WiFi (${e.code}) — عرض المحفوظ',
+            tag: 'WifiScan');
         final saved = await _db.accessPointDao.watchAll().first;
         aps = saved.map(WifiMapper.toAccessPointEntity).toList();
       }

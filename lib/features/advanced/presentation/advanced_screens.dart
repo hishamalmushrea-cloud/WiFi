@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/packet_capture_service.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/presentation/widgets/app_background.dart';
 import '../../../core/presentation/widgets/glass_card.dart';
@@ -11,48 +13,58 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 
 /// ────────────── شاشة التقاط الحزم (Root) ──────────────
-class PacketCaptureScreen extends StatefulWidget {
+///
+/// تستهلك تدفّق [PacketCaptureService] (EventChannel أصلي):
+/// سطور tcpdump حقيقية عند توفّر Root، ورسالة تدهور آمن إن غاب.
+class PacketCaptureScreen extends ConsumerStatefulWidget {
   const PacketCaptureScreen({super.key});
 
   @override
-  State<PacketCaptureScreen> createState() => _PacketCaptureScreenState();
+  ConsumerState<PacketCaptureScreen> createState() =>
+      _PacketCaptureScreenState();
 }
 
-class _PacketCaptureScreenState extends State<PacketCaptureScreen> {
+class _PacketCaptureScreenState extends ConsumerState<PacketCaptureScreen> {
   bool _capturing = false;
+  bool _unsupported = false;
   final List<String> _log = [];
-  Timer? _timer;
-  int _count = 0;
+  final List<StreamSubscription<dynamic>> _subs = [];
 
-  void _toggle() {
-    setState(() {
-      _capturing = !_capturing;
-      if (_capturing) {
-        // محاكاة تدفّق الحزم — حقيقي عبر Vortex/ARP في PHASE 11.
-        _timer = Timer.periodic(const Duration(milliseconds: 700), (_) {
-          setState(() {
-            _count++;
-            final samples = [
-              'TCP  192.168.1.${20 + _count % 30} :${40000 + _count} → 8.8.8.8:443 [PSH,ACK] len=${40 + _count % 200}',
-              'UDP  0.0.0.0:68 → 255.255.255.255:67 (DHCP Discover)',
-              'ARP  who-has 192.168.1.1 tell 192.168.1.${_count % 254}',
-              'DNS  query A connectivity-check.example.com',
-              'MDNS 224.0.0.251:5353 PTR _googlecast._tcp.local',
-            ];
-            _log.insert(0, samples[_count % samples.length]);
-            if (_log.length > 100) _log.removeLast();
-          });
-        });
-      } else {
-        _timer?.cancel();
-      }
-    });
+  @override
+  void initState() {
+    super.initState();
+    final service = ref.read(packetCaptureServiceProvider);
+    _subs.add(service.lines.listen((line) {
+      if (!mounted) return;
+      setState(() {
+        _log.insert(0, line);
+        if (_log.length > 100) _log.removeLast();
+      });
+    }));
+    _subs.add(service.statusStream.listen((status) {
+      if (!mounted) return;
+      setState(() {
+        _capturing = status == CaptureStatus.running;
+        _unsupported = status == CaptureStatus.unsupported;
+      });
+    }));
   }
 
   @override
   void dispose() {
-    _timer?.cancel();
+    for (final s in _subs) {
+      s.cancel();
+    }
     super.dispose();
+  }
+
+  void _toggle() {
+    final service = ref.read(packetCaptureServiceProvider);
+    if (_capturing) {
+      service.stop();
+    } else {
+      service.start();
+    }
   }
 
   @override
@@ -66,7 +78,7 @@ class _PacketCaptureScreenState extends State<PacketCaptureScreen> {
             children: [
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: _toggle,
+                  onPressed: _unsupported ? null : _toggle,
                   style: FilledButton.styleFrom(
                     backgroundColor:
                         _capturing ? AppColors.error : AppColors.primary,
@@ -82,6 +94,22 @@ class _PacketCaptureScreenState extends State<PacketCaptureScreen> {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
+          if (_unsupported)
+            const GlassCard(
+              child: Row(
+                children: [
+                  Icon(Icons.info_outline_rounded, color: AppColors.warning),
+                  SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Text(
+                      'الالتقاط المباشر يتطلب جهازاً بصلاحيات Root مع أداة tcpdump. '
+                      'على الأجهزة غير المدعومة تتوفر بقية أدوات التحليل دون قيود.',
+                      style: TextStyle(fontSize: 13),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           GlassCard(
             padding: EdgeInsets.zero,
             child: SizedBox(

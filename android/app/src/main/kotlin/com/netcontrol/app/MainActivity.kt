@@ -2,21 +2,19 @@ package com.netcontrol.app
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
+import com.netcontrol.app.native.NativeChannels
 
 /**
  * نقطة الدخول الأصلية لتطبيق Android.
  *
- * القنوات الأصلية (Method Channels) التالية ستُسجَّل هنا في PHASE 11:
- *  - [RootCheckerChannel]  : فحص صلاحيات Root بطرق متعددة
- *  - [NetworkChannel]      : جدول ARP، معلومات WiFi، أوامر ping
- *  - [ArpReaderChannel]    : قراءة ملفات /proc/net/arp
- *
- * نُبقي الـ Activity في أقل صورة ممكنة الآن ليعمل توليد
- * GeneratedPluginRegistrant تلقائياً، وكل القنوات تُضاف في مرحلتها.
+ * تسجّل كل الجسور الأصلية عند إنشاء المحرّك:
+ *  - RootCheckerChannel   : فحص صلاحيات الجذر بأربع طرق
+ *  - NetworkChannel       : معلومات الشبكة، جدول ARP، مسح WiFi
+ *  - PacketCaptureChannel : التقاط حزم مباشر عبر tcpdump/EventChannel
  */
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
-        // تسجيل القنوات الأصلية سيتم هنا في PHASE 11.
+        NativeChannels.register(applicationContext, flutterEngine)
     }
 }
