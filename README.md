@@ -44,7 +44,7 @@ flutter run
 | 1 | إعداد المشروع | ✅ |
 | 2 | Core Layer (ثيمات، أخطاء، كشف Root، أدوات، Extensions، متجاوب) | ✅ |
 | 3 | Database Layer (15 جدول + 14 DAO + فهارس + SQLCipher + ترحيل) | ✅ |
-| 4 | Domain Layer (Entities, Repositories, UseCases) | ⏳ |
+| 4 | Domain Layer (12 كيان Freezed + 9 مستودعات + حالات استخدام) | ✅ |
 | 5 | Data Layer (Repos, Datasources, Router Controllers) | ⏳ |
 | 6 | Network Services (الماسح، السرعة، التحليل، الأمان) | ⏳ |
 | 7 | مكونات UI مشتركة (Glass cards, gauges, graphs) | ⏳ |
