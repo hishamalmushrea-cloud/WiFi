@@ -8,6 +8,10 @@ import '../../../core/presentation/widgets/responsive_layout.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import 'tools_pages.dart';
+import 'wol_page.dart';
+import '../../advanced/presentation/advanced_screens.dart';
+import '../../heatmap/presentation/heatmap_page.dart';
+import '../../wardriving/presentation/wardriving_page.dart';
 
 /// مركز أدوات الشبكة: شبكة متجاوبة بكل الأدوات المتاحة.
 class ToolsHubPage extends ConsumerWidget {
@@ -33,7 +37,7 @@ class ToolsHubPage extends ConsumerWidget {
           () => _open(context, const SubnetCalculatorPage())),
       ToolData(Icons.power_settings_new_rounded, AppStrings.toolWol,
           AppColors.gradientSuccess, AppColors.glowAccent,
-          () => _comingSoon(context)),
+          () => _open(context, const WakeOnLanPage())),
       ToolData(Icons.business_rounded, AppStrings.toolMacVendor,
           AppColors.gradientAccent, AppColors.glowAccent,
           () => _open(context, const MacVendorToolPage())),
@@ -42,16 +46,22 @@ class ToolsHubPage extends ConsumerWidget {
           () => _open(context, const SslToolPage())),
       ToolData(Icons.map_rounded, AppStrings.toolHeatmap,
           AppColors.gradientPrimary, AppColors.glowPrimary,
-          () => _comingSoon(context)),
+          () => _open(context, const HeatmapPage())),
       ToolData(Icons.terrain_rounded, AppStrings.toolSiteSurvey,
           AppColors.gradientSuccess, AppColors.glowAccent,
-          () => _comingSoon(context)),
+          () => _open(context, const HeatmapPage())),
       ToolData(Icons.directions_car_rounded, AppStrings.toolWardriving,
           AppColors.gradientAccent, AppColors.glowAccent,
-          () => _comingSoon(context)),
+          () => _open(context, const WardrivingPage())),
       ToolData(Icons.bug_report_rounded, AppStrings.toolPacketCapture,
           AppColors.gradientWarning, AppColors.glowError,
-          () => _comingSoon(context)),
+          () => _open(context, const PacketCaptureScreen())),
+      ToolData(Icons.bar_chart_rounded, AppStrings.toolProtocolAnalyzer,
+          AppColors.gradientPrimary, AppColors.glowPrimary,
+          () => _open(context, const ProtocolAnalyzerScreen())),
+      ToolData(Icons.shield_rounded, AppStrings.toolMitmDetection,
+          AppColors.gradientAccent, AppColors.glowError,
+          () => _open(context, const MitmDetectionScreen())),
     ];
 
     return Scaffold(

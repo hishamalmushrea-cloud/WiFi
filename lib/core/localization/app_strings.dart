@@ -248,7 +248,12 @@ abstract class AppStrings {
   static const String toolWardriving = 'Wardriving';
   static const String toolPacketCapture = 'التقاط الحزم';
   static const String toolProtocolAnalyzer = 'محلل البروتوكولات';
+  static const String toolMitmDetection = 'كشف هجمات الوسيط';
   static const String targetHost = 'الهدف (IP أو نطاق)';
+
+  // ── الخط الزمني والخريطة الحرارية ───────────────────────────
+  static const String activityTimeline = 'الخط الزمني للنشاط';
+  static const String timelineEmpty = 'لا أحداث بعد — ستنتهي هنا جميع تنبيهات الأمان ونتائج الاختبارات.';
 
   // ── الإعدادات ────────────────────────────────────────────────
   static const String settingsAppearance = 'المظهر';

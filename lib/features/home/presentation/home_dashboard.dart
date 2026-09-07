@@ -11,6 +11,7 @@ import '../../../core/presentation/widgets/responsive_layout.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import 'activity_timeline_page.dart';
 import '../../devices/presentation/device_providers.dart';
 import '../../network_scan/presentation/network_scan_page.dart';
 import '../../network_scan/presentation/scan_providers.dart';
@@ -50,6 +51,13 @@ class HomeDashboard extends ConsumerWidget {
       appBar: AppBar(
         title: const Text(AppStrings.appName),
         actions: [
+          IconButton(
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const ActivityTimelinePage()),
+            ),
+            icon: const Icon(Icons.timeline_rounded),
+            tooltip: AppStrings.activityTimeline,
+          ),
           IconButton(
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(builder: (_) => const SettingsPage()),
