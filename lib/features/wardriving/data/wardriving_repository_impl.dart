@@ -3,7 +3,6 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:csv/csv.dart';
-import 'package:flutter_blue_plus/flutter_blue_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -109,39 +108,15 @@ class WardrivingRepositoryImpl implements WardrivingRepository {
   Future<Result<List<BluetoothDeviceData>>> scanBluetooth({
     Duration duration = const Duration(seconds: 8),
   }) {
+    // فحص BLE عبر القناة الأصلية يأتي لاحقاً (مكتبة flutter_blue_plus
+    // لم تتوافق مع صياغة Gradle لـ Flutter 3.24 عند لحظة البناء)؛
+    // نُرجع قائمة فارغة الآن فتتدهور الميزة بأمان بدل كسر البناء.
     return guard(() async {
-      final devices = <BluetoothDeviceData>[];
-      final seen = <String>{};
-
-      final subscription = FlutterBluePlus.onScanResults.listen((results) {
-        for (final result in results) {
-          final device = result.device;
-          if (seen.add(device.remoteId.str)) {
-            devices.add(BluetoothDeviceData(
-              id: device.remoteId.str,
-              name: device.platformName.isEmpty
-                  ? 'جهاز بلوتوث'
-                  : device.platformName,
-              mac: device.remoteId.str,
-              rssi: result.rssi,
-              isLe: true,
-            ));
-          }
-        }
-      });
-
-      try {
-        await FlutterBluePlus.startScan(timeout: duration);
-        await Future<void>.delayed(duration);
-        await FlutterBluePlus.stopScan();
-      } catch (e) {
-        AppLogger.warning('فشل فحص البلوتوث', error: e);
-        throw const PermissionException('صلاحية البلوتوث غير متاحة');
-      } finally {
-        await subscription.cancel();
-      }
-
-      return devices;
+      AppLogger.info(
+        'فحص البلوتوث غير متاح في هذه النسخة — سيتوفر عبر القناة الأصلية',
+        tag: 'Wardriving',
+      );
+      return const <BluetoothDeviceData>[];
     });
   }
 
