@@ -34,7 +34,7 @@ dependencies:
   dart_ping: ^9.0.1
   dart_ping_ios: ^4.0.2
   bonsoir: ^5.1.0
-  network_info_plus: ^5.0.3
+  network_info_plus: ^6.0.0
   connectivity_plus: ^6.0.3
 
   # ── الرسوم البيانية والخرائط ─────────────────────────────────
@@ -64,7 +64,7 @@ dependencies:
   json_annotation: ^4.8.1
 
   # ── معلومات الجهاز والصلاحيات ────────────────────────────────
-  package_info_plus: ^5.0.1
+  package_info_plus: ^8.0.0
   permission_handler: ^11.2.0
 
   # ── واجهة المستخدم ──────────────────────────────────────────
