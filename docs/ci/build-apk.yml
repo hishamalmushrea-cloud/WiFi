@@ -1,0 +1,137 @@
+# ── نسخة CI محدّثة — تحل محل .github/workflows/build-apk.yml الحالي ──
+# انسخ محتوى هذا الملف كاملاً (مع هذه الأسطر — تعليقات YAML مهملة)
+# إلى .github/workflows/build-apk.yml على فرع arena/01a0826a-wifi عبر محرر GitHub.
+name: Build Android APK
+
+on:
+  push:
+    branches: [arena/*-wifi]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  build:
+    name: بناء APK
+    runs-on: ubuntu-latest
+    steps:
+      - name: سحب الكود
+        uses: actions/checkout@v4
+
+      - name: تثبيت Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: تثبيت Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+
+      - name: إصدارات الأدوات
+        run: |
+          flutter --version
+          dart --version
+
+      - name: فحص الكود قبل البناء (analyze + test)
+        id: check
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "===== flutter pub get ====="
+            flutter pub get
+            echo "===== build_runner (توليد الكود قبل الفحص) ====="
+            dart run build_runner build --delete-conflicting-outputs
+            echo "===== flutter analyze ====="
+            flutter analyze --no-fatal-infos
+            echo "===== flutter test ====="
+            flutter test
+          } 2>&1 | tee check.log
+
+      # pub get — نلتقط النتيجة الرسمية عبر steps.pub.outcome (لا نعتمد على نص).
+      - name: تنزيل الحزم (pub get)
+        id: pub
+        if: steps.check.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee pub_get.log
+
+      # توليد الكود والبناء في خطوة واحدة تُسجَّل بالكامل.
+      - name: توليد الكود وبناء APK
+        id: build
+        if: steps.pub.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          {
+            echo "===== build_runner ====="
+            dart run build_runner build --delete-conflicting-outputs
+            echo "===== flutter build apk ====="
+            flutter build apk --release
+          } 2>&1 | tee build.log
+
+      # عند أي فشل: انشر السبب الجذري في Issue عام ليُقرأ من خارج Actions.
+      - name: نشر سبب الفشل في Issue
+        if: steps.check.outcome == 'failure' || steps.pub.outcome == 'failure' || steps.build.outcome == 'failure'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "## فشل بناء APK"
+            echo ""
+            echo "الالتزام: ${GITHUB_SHA::7}"
+            echo ""
+            if [ -f check.log ]; then
+              echo "### فحص الكود (analyze/test)"
+              echo '```'
+              tail -n 120 check.log
+              echo '```'
+            fi
+            if [ -f pub_get.log ]; then
+              echo "### pub get"
+              echo '```'
+              tail -n 70 pub_get.log
+              echo '```'
+            fi
+            if [ -f build.log ]; then
+              echo "### build_runner / flutter build"
+              echo '```'
+              tail -n 160 build.log
+              echo '```'
+            fi
+          } > issue_body.md
+          gh issue create --title "❗ خطأ بناء APK (${GITHUB_SHA::7})" --body-file issue_body.md || true
+          exit 1
+
+      - name: إعادة تسمية الملف
+        if: steps.build.outcome == 'success'
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk netcontrol-latest.apk
+          ls -lh netcontrol-latest.apk
+
+      - name: رفع APK كأرتيفكت
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: netcontrol-apk
+          path: netcontrol-latest.apk
+          retention-days: 30
+
+      - name: نشر Release مع APK
+        if: steps.build.outcome == 'success'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: apk-latest
+          name: نت كونترول — NetControl APK
+          body: |
+            ملف APK جاهز للتثبيت على Android.
+            نزّل netcontrol-latest.apk ثم فعّل «التثبيت من مصادر غير معروفة».
+          files: netcontrol-latest.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
