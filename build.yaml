@@ -10,7 +10,8 @@ targets:
           store_date_time_values_as_text: true
           # أسماء الكلاسات المولّدة تتبع نمط <Table>Row لتمييزها
           # عن كيانات Domain Layer التي ستبنى في المرحلة 4.
-          data_class_to_companion: true
+          # اسم مفتاح drift الصحيح (جمع): يُنشئ Companion من اسم DataClass.
+          data_class_to_companions: true
       freezed:
         options:
           # نفعّل نسخ JSON تلقائياً في نماذج freezed
