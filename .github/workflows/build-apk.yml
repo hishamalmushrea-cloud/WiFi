@@ -1,12 +1,13 @@
 name: Build Android APK
 
-# يبني APK في كل دفعة على الفرع، ويسمح بالتشغيل اليدوي.
-# سبب الوجود: بيئة التطوير قد لا تتوفر فيها أدوات Flutter؛ هذا السير
-# يضمن إنتاج APK حقيقي قابل للتنزيل من GitHub Actions بدون إعداد محلي.
 on:
   push:
     branches: [arena/01a07d86-wifi]
   workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   build:
@@ -26,16 +27,46 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: '3.24.x'
+          flutter-version: '3.24.5'
 
-      - name: تنزيل الحزم
-        run: flutter pub get
+      - name: إصدارات الأدوات
+        run: |
+          flutter --version
+          dart --version
+
+      - name: تنزيل الحزم (pub get)
+        id: pub
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          flutter pub get 2>&1 | tee pub_get.log || true
+          if grep -qiE "Got dependencies|Resolving dependencies done" pub_get.log && [ "${PIPESTATUS[0]}" = "0" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: إنشاء Issue بالخطأ إن فشل pub get
+        if: steps.pub.outputs.ok != 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          {
+            echo "## فشل flutter pub get"
+            echo ""
+            echo "الفرع: ${GITHUB_REF}  الالتزام: ${GITHUB_SHA::7}"
+            echo ""
+            echo '```'
+            tail -n 80 pub_get.log
+            echo '```'
+          } > issue_body.md
+          gh issue create --title "❗ خطأ بناء: flutter pub get" --body-file issue_body.md || true
+          echo "===== سجل pub get (للعرض في اللوغ) ====="
+          cat pub_get.log
+          exit 1
 
       - name: توليد Freezed / Drift (build_runner)
         run: dart run build_runner build --delete-conflicting-outputs
-
-      - name: فحص ثابت
-        run: flutter analyze --no-pub || true
 
       - name: بناء APK (تجريبي)
         run: flutter build apk --release
@@ -59,7 +90,7 @@ jobs:
           name: نت كونترول — NetControl APK
           body: |
             ملف APK جاهز للتثبيت على Android.
-            نزّل **netcontrol-latest.apk** ثم فعّل «التثبيت من مصادر غير معروفة».
+            نزّل netcontrol-latest.apk ثم فعّل «التثبيت من مصادر غير معروفة».
           files: netcontrol-latest.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
