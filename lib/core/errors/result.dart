@@ -1,3 +1,5 @@
+library;
+
 import '../utils/app_logger.dart';
 import 'exceptions.dart';
 import 'failures.dart';
@@ -7,7 +9,6 @@ import 'failures.dart';
 ///
 /// سبب التصميم: يُجبر كل مستدعي على معالجة حالتي النجاح والفشل
 /// صراحة عبر [when]، فلا تُبتلع الأخطاء في الواجهة.
-library;
 
 sealed class Result<T> {
   const Result();

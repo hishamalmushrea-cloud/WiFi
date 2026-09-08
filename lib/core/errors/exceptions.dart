@@ -1,3 +1,5 @@
+library;
+
 import 'failures.dart';
 
 /// استثناءات طبقة البيانات (Data).
@@ -5,7 +7,6 @@ import 'failures.dart';
 /// تُرمى من مصادر البيانات (Dio، Drift، القنوات الأصلية) ثم
 /// تُلتقط وتُحوَّل إلى [Failure] مطابق في [guard]، فلا تصل
 /// الاستثناءات التقنية لطبقة المجال أبداً.
-library;
 
 sealed class AppException implements Exception {
   const AppException(this.message);

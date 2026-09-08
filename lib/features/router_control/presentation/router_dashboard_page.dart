@@ -421,8 +421,7 @@ class _PortForwardTab extends ConsumerWidget {
               SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  AppStrings.portForwardInfo
-                  AppStrings.brandRulesNote,
+                  '${AppStrings.portForwardInfo}${AppStrings.brandRulesNote}',
                 ),
               ),
             ],
@@ -441,16 +440,16 @@ class _MacFilterTab extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return ListView(
       padding: context.responsivePadding,
-      children: const [
-        GlassCard(
+      children: [
+        const GlassCard(
           child: Row(
             children: [
               Icon(Icons.filter_alt_rounded, color: AppColors.primary),
               SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
-                  AppStrings.macFilterInfo
-                  AppStrings.blockHint,
+                  // جُمع نصّا التلميحان في سلسلة واحدة عبر التداخل.
+                  '${AppStrings.macFilterInfo}${AppStrings.blockHint}',
                 ),
               ),
             ],

@@ -115,7 +115,7 @@ class AppConstants {
     8888: 'HTTP-Alt',
     9100: 'Printer RAW',
     27017: 'MongoDB',
-  ];
+  };
 
   // ── روابط خارجية ─────────────────────────────────────────────
   static const String macVendorApiUrl = 'https://api.macvendors.com/';

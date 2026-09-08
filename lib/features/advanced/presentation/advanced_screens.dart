@@ -102,9 +102,8 @@ class _PacketCaptureScreenState extends ConsumerState<PacketCaptureScreen> {
                   SizedBox(width: AppSpacing.md),
                   Expanded(
                     child: Text(
-                      AppStrings.captureNeedsRoot
-                      AppStrings.captureNeedsRoot2,
-                      style: TextStyle(fontSize: 13),
+                      '${AppStrings.captureNeedsRoot}${AppStrings.captureNeedsRoot2}',
+                      style: const TextStyle(fontSize: 13),
                     ),
                   ),
                 ],

@@ -1,10 +1,11 @@
-import 'package:drift/drift.dart';
+part of '../app_database.dart';
 
 /// جداول قاعدة بيانات NetControl (15 جدولاً).
 ///
 /// نسمّي صفوف Drift بـ «...Row» لتمييزها عن كيانات Domain Layer
 /// التي ستبنى في PHASE 4 وتحمل أسماء الأعمال (Device، Alert…).
-part of '../app_database.dart';
+/// (Drift مستورد في الملف الأب app_database.dart فلا حاجة لـ import هنا
+///  — ملفات part لا تقبل توجيهات import).
 
 // ════════════════════════════════════════════════════════════════
 //  1) الأجهزة المكتشفة على الشبكة
