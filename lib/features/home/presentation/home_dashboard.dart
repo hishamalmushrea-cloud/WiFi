@@ -188,7 +188,7 @@ class HomeDashboard extends ConsumerWidget {
                     icon: a.icon,
                     label: a.label,
                     gradient: a.gradient,
-                    glowColor: a.glow,
+                    glowColor: a.glowColor,
                     onTap: a.onTap,
                   );
                 },
