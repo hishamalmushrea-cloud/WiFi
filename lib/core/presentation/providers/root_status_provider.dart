@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../platform/root_checker_channel.dart';
 import '../../platform/root_checker.dart';
 import '../../platform/root_status.dart';
 

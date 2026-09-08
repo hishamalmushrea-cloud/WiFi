@@ -8,6 +8,7 @@ import '../../../core/domain/entities/security.dart';
 import '../../../core/domain/entities/vulnerability.dart';
 import '../../../core/domain/repositories/security_repository.dart';
 import '../../../core/errors/result.dart';
+import '../../../core/platform/root_checker_channel.dart';
 import '../../../core/platform/root_checker.dart';
 import '../../../core/utils/app_logger.dart';
 

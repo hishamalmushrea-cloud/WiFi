@@ -10,6 +10,7 @@ import '../../../core/presentation/widgets/glass_card.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../data/settings_repository_impl.dart';
 import 'settings_providers.dart';
 
 /// صفحة الإعدادات بأقسامها (مظهر، أمان، مراقبة، تكاملات، عن التطبيق).
