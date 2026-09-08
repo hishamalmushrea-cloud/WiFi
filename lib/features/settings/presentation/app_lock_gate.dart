@@ -111,7 +111,10 @@ class _AppLockGateState extends ConsumerState<AppLockGate>
         child: BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
           child: ColoredBox(
-            color: Colors.black.withValues(alpha: 0.55),
+            // withOpacity بدل withValues — الثانية تتطلب Flutter 3.27+
+            // بينما المشروع مثبّت على 3.24.5.
+            // ignore: deprecated_member_use
+            color: Colors.black.withOpacity(0.55),
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(AppSpacing.xl),
