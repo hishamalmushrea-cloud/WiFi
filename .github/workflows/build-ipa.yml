@@ -2,7 +2,7 @@ name: Build iOS IPA
 
 on:
   push:
-    branches: [arena/01a07d86-wifi]
+        branches: [arena/*-wifi]
   workflow_dispatch:
 
 permissions:
