@@ -47,17 +47,17 @@ class DeviceDao extends DatabaseAccessor<AppDatabase>
     // نُبقي الحقول التي لم ترِد في الدفعة (Absent) على حالها:
     // copyWith يستبدل القيم المُمرّرة فقط، فلا تُمسح بيانات قديمة.
     final updated = existing.copyWith(
-      ip: device.ip,
-      name: device.name,
-      vendor: device.vendor,
-      os: device.os,
-      deviceType: device.deviceType,
-      fingerprint: device.fingerprint,
-      hostname: device.hostname,
-      connectionType: device.connectionType,
-      signalStrength: device.signalStrength,
-      throughput: device.throughput,
-      lastSeen: device.lastSeen,
+      ip: device.ip.valueIfPresent,
+      name: device.name.valueIfPresent,
+      vendor: device.vendor.valueIfPresent,
+      os: device.os.valueIfPresent,
+      deviceType: device.deviceType.valueIfPresent,
+      fingerprint: device.fingerprint.valueIfPresent,
+      hostname: device.hostname.valueIfPresent,
+      connectionType: device.connectionType.valueIfPresent,
+      signalStrength: device.signalStrength.valueIfPresent,
+      throughput: device.throughput.valueIfPresent,
+      lastSeen: device.lastSeen.valueIfPresent,
     );
     await update(devices).replace(updated);
     return existing.id;
@@ -221,7 +221,8 @@ class RouterSettingsDao extends DatabaseAccessor<AppDatabase>
   Future<int> insert(RouterSettingsCompanion router) =>
       into(routerSettings).insert(router);
 
-  Future<bool> update(RouterSettingRow router) =>
+  /// استبدال كامل للصف (اسم مختلف عن update المولّدة لتفادي التصادم).
+  Future<bool> replaceRow(RouterSettingRow router) =>
       update(routerSettings).replace(router);
 
   /// يفعّل راوتراً واحداً فقط ويلغي تفعيل الباقي.
@@ -255,8 +256,13 @@ class WifiSurveyDao extends DatabaseAccessor<AppDatabase>
   Future<int> insert(WifiSurveysCompanion survey) =>
       into(wifiSurveys).insert(survey);
 
-  Future<bool> update(WifiSurveyRow survey) =>
+  /// استبدال كامل للصف (اسم مختلف عن update المولّدة لتفادي التصادم).
+  Future<bool> replaceRow(WifiSurveyRow survey) =>
       update(wifiSurveys).replace(survey);
+
+  /// تحديث جزئي للمسح بالمعرّف عبر Companion (الحقول Absent تبقى على حالها).
+  Future<int> updateById(WifiSurveysCompanion survey, int id) =>
+      (update(wifiSurveys)..where((t) => t.id.equals(id))).write(survey);
 
   Future<int> deleteById(int id) =>
       (delete(wifiSurveys)..where((t) => t.id.equals(id))).go();

@@ -30,10 +30,14 @@ class AppLogger {
       _logger.d(tag == null ? message : '[$tag] $message');
 
   /// تحذير لا يوقف العملية لكن يجب الانتباه له.
-  static void warning(String message, {Object? error, StackTrace? stackTrace}) =>
-      _logger.w(message, error: error, stackTrace: stackTrace);
+  static void warning(String message,
+          {String? tag, Object? error, StackTrace? stackTrace}) =>
+      _logger.w(tag == null ? message : '[$tag] $message',
+          error: error, stackTrace: stackTrace);
 
   /// خطأ فعلي — يُستخدم في مسارات معالجة الاستثناءات.
-  static void error(String message, {Object? error, StackTrace? stackTrace}) =>
-      _logger.e(message, error: error, stackTrace: stackTrace);
+  static void error(String message,
+          {String? tag, Object? error, StackTrace? stackTrace}) =>
+      _logger.e(tag == null ? message : '[$tag] $message',
+          error: error, stackTrace: stackTrace);
 }

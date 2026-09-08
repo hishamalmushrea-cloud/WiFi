@@ -128,7 +128,8 @@ class SavedNetworkDao extends DatabaseAccessor<AppDatabase>
   Future<int> insert(SavedNetworksCompanion network) =>
       into(savedNetworks).insert(network);
 
-  Future<bool> update(SavedNetworkRow network) =>
+  /// استبدال كامل للصف (اسم مختلف عن update المولّدة لتفادي التصادم).
+  Future<bool> replaceRow(SavedNetworkRow network) =>
       update(savedNetworks).replace(network);
 
   Future<int> deleteById(int id) =>
@@ -161,17 +162,17 @@ class AccessPointDao extends DatabaseAccessor<AppDatabase>
       await into(accessPoints).insert(ap);
     } else {
       final updated = existing.copyWith(
-        ssid: ap.ssid,
-        channel: ap.channel,
-        frequency: ap.frequency,
-        rssi: ap.rssi,
-        security: ap.security,
-        capabilities: ap.capabilities,
-        vendor: ap.vendor,
-        width: ap.width,
-        band: ap.band,
-        lastSeen: ap.lastSeen,
-        isHidden: ap.isHidden,
+        ssid: ap.ssid.valueIfPresent,
+        channel: ap.channel.valueIfPresent,
+        frequency: ap.frequency.valueIfPresent,
+        rssi: ap.rssi.valueIfPresent,
+        security: ap.security.valueIfPresent,
+        capabilities: ap.capabilities.valueIfPresent,
+        vendor: ap.vendor.valueIfPresent,
+        width: ap.width.valueIfPresent,
+        band: ap.band.valueIfPresent,
+        lastSeen: ap.lastSeen.valueIfPresent,
+        isHidden: ap.isHidden.valueIfPresent,
       );
       await update(accessPoints).replace(updated);
     }
