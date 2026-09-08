@@ -84,7 +84,7 @@ class NetworkChannel(
     private fun findGatewayFromInterface(): String? {
         return try {
             for (iface in NetworkInterface.getNetworkInterfaces()) {
-                if (!iface.name.startsWith(Regex("wlan|ap|eth|swlan"))) continue
+                if (!Regex("wlan|ap|eth|swlan").containsMatchIn(iface.name)) continue
                 for (addr in iface.interfaceAddresses) {
                     val ip = addr.address
                     if (ip is Inet4Address) {

@@ -8,7 +8,8 @@ plugins {
 android {
     namespace = "com.netcontrol.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // أعلى NDK متوافق مع كل الإضافات (يتفادى تحذير التوافق في 12 إضافة).
+    ndkVersion = "25.1.8937393"
 
     compileOptions {
         // مطلوب لـ flutter_local_notifications و workmanager:
