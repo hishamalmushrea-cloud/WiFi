@@ -1,6 +1,8 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:bonsoir/bonsoir.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:upnp/upnp.dart' as upnp;
 
 import '../../../core/domain/entities/discovered_service.dart';
 import '../../../core/utils/app_logger.dart';
@@ -110,49 +112,95 @@ class ServiceDiscovery {
     return found.values.toList();
   }
 
+  /// اكتشاف أجهزة UPnP عبر SSDP مباشرة (بدون حزمة upnp المتوقفة عند Dart 2).
+  ///
+  /// السبب: حزمة upnp الرسمية آخر إصدار 2.0.1 مبني على Dart <3 ولا
+  /// يحل مع Dart 3، لذلك ننفّذ M-SEARCH على مجموعة SSDP المتعددة
+  /// الإرسال (239.255.255.250:1900) عبر [RawDatagramSocket] المدمج
+  /// في dart:io، ونقرأ ترويسة LOCATION لرسم عنوان الجهاز.
   Future<List<DiscoveredService>> _discoverUpnp(Duration timeout) async {
-    final results = <DiscoveredService>[];
+    final results = <String, DiscoveredService>{};
+    RawDatagramSocket? socket;
     try {
-      final discoverer = upnp.DeviceDiscoverer();
-      final devices = await discoverer
-          .quickDiscoverClients(timeout: timeout)
-          .toList()
-          .catchError((Object e) {
-        AppLogger.warning('فشل اكتشاف UPnP', error: e);
-        return <upnp.DiscoveredClient>[];
+      socket = await RawDatagramSocket.bind(
+        InternetAddress.anyIPv4,
+        0,
+        ttl: 4,
+        reuseAddress: true,
+      );
+      socket.broadcastEnabled = true;
+      socket.multicastHops = 4;
+
+      // رسالة M-SEARCH التي تستجيب لها أجهزة UPnP (راوترات، طابعات…).
+      final search = 'M-SEARCH * HTTP/1.1\r\n'
+              'HOST: 239.255.255.250:1900\r\n'
+              'MAN: "ssdp:discover"\r\n'
+              'MX: 2\r\n'
+              'ST: ssdp:all\r\n\r\n'
+          .codeUnits;
+      final multicast = InternetAddress('239.255.255.250');
+
+      // نرسل عدة مرات على فترات قصيرة فأجهزة الشبكة قد تتفقد حزمة.
+      for (var i = 0; i < 3; i++) {
+        socket.send(search, multicast, 1900);
+        await Future<void>.delayed(const Duration(milliseconds: 400));
+      }
+
+      final completer = Completer<void>();
+      final timer = Timer(timeout, () {
+        if (!completer.isCompleted) completer.complete();
       });
 
-      for (final client in devices) {
-        try {
-          final device = await client.getDevice();
-          results.add(DiscoveredService(
-            name: device.friendlyName ?? client.location?.host ?? 'جهاز UPnP',
+      socket.listen((event) {
+        if (event != RawSocketEvent.read) return;
+        final datagram = socket!.receive();
+        if (datagram == null) return;
+        final text = String.fromCharCodes(datagram.data);
+        final location = _ssdpHeader(text, 'LOCATION');
+        if (location == null) return;
+
+        final uri = Uri.tryParse(location);
+        if (uri == null || uri.host.isEmpty) return;
+        final key = '${uri.host}:${uri.port}';
+        final server = _ssdpHeader(text, 'SERVER');
+        results.putIfAbsent(
+          key,
+          () => DiscoveredService(
+            name: uri.host,
             type: '_upnp._tcp',
-            host: client.location?.host,
-            ip: client.location?.host,
-            port: client.location?.port,
+            host: uri.host,
+            ip: uri.host,
+            port: uri.port,
             source: 'upnp',
             attributes: {
-              if (device.manufacturer != null) 'manufacturer': device.manufacturer!,
-              if (device.modelName != null) 'model': device.modelName!,
-              'udn': device.udn ?? '',
+              if (server != null) 'server': server,
+              'location': location,
             },
-          ));
-        } catch (e) {
-          // تعذّر جلب تفاصيل الجهاز — نكتفي بالعنوان.
-          results.add(DiscoveredService(
-            name: client.location?.host ?? 'جهاز UPnP',
-            type: '_upnp._tcp',
-            ip: client.location?.host,
-            port: client.location?.port,
-            source: 'upnp',
-          ));
-        }
-      }
+          ),
+        );
+      });
+
+      await completer.future;
+      timer.cancel();
     } catch (e) {
-      AppLogger.warning('تعذّر بدء اكتشاف UPnP', error: e);
+      AppLogger.warning('تعذّر بدء اكتشاف UPnP/SSDP', error: e);
+    } finally {
+      socket?.close();
     }
-    return results;
+    return results.values.toList();
+  }
+
+  /// يستخرج قيمة ترويسة من ردّ SSDP (مثل LOCATION/SERVER) دون حساسية حالة.
+  String? _ssdpHeader(String response, String name) {
+    for (final line in response.split('\r\n')) {
+      final idx = line.indexOf(':');
+      if (idx <= 0) continue;
+      final key = line.substring(0, idx).trim().toUpperCase();
+      if (key == name.toUpperCase()) {
+        return line.substring(idx + 1).trim();
+      }
+    }
+    return null;
   }
 }
 
