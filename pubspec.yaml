@@ -7,6 +7,15 @@ environment:
   sdk: ">=3.3.0 <4.0.0"
   flutter: ">=3.19.0"
 
+
+# ── تثبيت نسخ إضافية محددة ─────────────────────────────────────
+# إصدارات أحدث من إضافتين تستخدمان flutter.compileSdkVersion في ملفات
+# Gradle الخاصة بهن، والامتداد "flutter" غير متوفر لمشاريع المكتبات في
+# Flutter 3.24 (تُوفّره 3.29+). نثبّت آخر نسخة قبل اعتماد الصياغة:
+dependency_overrides:
+  geolocator_android: 4.6.1
+  path_provider_android: 2.2.15
+
 dependencies:
   flutter:
     sdk: flutter
@@ -43,7 +52,7 @@ dependencies:
   latlong2: ^0.9.1
 
   # ── الموقع والبلوتوث ─────────────────────────────────────────
-  geolocator: ^14.0.0
+  geolocator: 13.0.3
 
   # ── التخزين والتصدير ─────────────────────────────────────────
   shared_preferences: ^2.2.3
