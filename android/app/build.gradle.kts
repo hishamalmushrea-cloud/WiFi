@@ -48,7 +48,7 @@ flutter {
 // Flutter 3.24.5 + AGP 8.3: لا تتفعّل أحياناً نسخة插件 التي تنقل APK إلى
 // build/app/outputs/flutter-apk/ التي يبحث عنها الأداة (flutter/flutter#174620).
 // نزامن الملف صراحةً بعد اكتمال assembleRelease:
-tasks.named("assembleRelease") {
+tasks.matching { it.name == "assembleRelease" }.configureEach {
     doLast {
         val from = layout.buildDirectory
             .file("outputs/apk/release/app-release.apk").get().asFile
