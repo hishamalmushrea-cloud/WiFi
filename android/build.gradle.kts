@@ -13,10 +13,6 @@ allprojects {
     project.plugins.withId("com.android.library") {
         extensions.configure<com.android.build.gradle.LibraryExtension> {
             if (compileSdk == null) compileSdk = 34
-            compileOptions {
-                sourceCompatibility = JavaVersion.VERSION_17
-                targetCompatibility = JavaVersion.VERSION_17
-            }
         }
     }
 }
