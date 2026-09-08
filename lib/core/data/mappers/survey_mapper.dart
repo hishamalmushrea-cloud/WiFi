@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart';
+
 import '../../database/app_database.dart';
 import '../../domain/entities/heatmap.dart';
 

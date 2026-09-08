@@ -21,7 +21,12 @@ class NetworkFailure extends Failure {
 
 /// فشل من خادم بعيد (HTTP 5xx أو استجابة غير صالحة).
 class ServerFailure extends Failure {
-  const ServerFailure([super.message = 'تعذّر الحصول على استجابة من الخادم.']);
+  const ServerFailure([
+    super.message = 'تعذّر الحصول على استجابة من الخادم.',
+    this.statusCode,
+  ]);
+
+  /// رمز الحالة HTTP إن كان متاحاً (للعرض أو التتبع).
   final int? statusCode;
 }
 

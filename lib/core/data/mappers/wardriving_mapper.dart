@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../database/app_database.dart';
 import '../../domain/entities/access_point.dart';
 import '../../domain/entities/wardriving.dart';

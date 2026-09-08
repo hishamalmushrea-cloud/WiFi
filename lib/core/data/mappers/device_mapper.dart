@@ -1,3 +1,5 @@
+import 'package:drift/drift.dart';
+
 import '../../database/app_database.dart';
 import '../../domain/entities/device.dart';
 import '../../utils/mac_utils.dart';

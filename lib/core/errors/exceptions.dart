@@ -29,7 +29,7 @@ class ServerException extends AppException {
   const ServerException([super.message = 'خطأ من الخادم', this.statusCode]);
   final int? statusCode;
   @override
-  Failure toFailure() => ServerFailure(message);
+  Failure toFailure() => ServerFailure(message, statusCode);
 }
 
 class TimeoutAppException extends AppException {
