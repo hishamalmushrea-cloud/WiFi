@@ -18,7 +18,7 @@ import UIKit
         let controller = window?.rootViewController as? FlutterViewController
 
         if let controller = controller {
-            let registrar = self.registrar(forPlugin: "NetControlNative")!
+            let registrar = controller.registrar(forPlugin: "NetControlNative")!
             JailbreakDetector.register(with: registrar)
             IosNetworkChannel.register(with: registrar)
             _ = controller
