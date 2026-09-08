@@ -75,6 +75,9 @@ dependencies:
   package_info_plus: ^8.0.0
   permission_handler: ^11.2.0
 
+  # ── الأمان: قفل التطبيق بالبصمة/Face ID ──────────────────────
+  local_auth: 2.2.0
+
   # ── واجهة المستخدم ──────────────────────────────────────────
   google_fonts: ^6.2.0
   shimmer: ^3.0.0

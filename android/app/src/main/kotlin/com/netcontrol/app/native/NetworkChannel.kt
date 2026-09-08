@@ -39,6 +39,7 @@ class NetworkChannel(
         when (call.method) {
             "getNetworkInfo" -> result.success(getNetworkInfo())
             "getArpTable" -> result.success(getArpTable())
+            "getWifiRssi" -> result.success(getWifiRssi())
             "scanWifi" -> try {
                 result.success(scanWifi())
             } catch (e: PermissionDeniedException) {
@@ -96,6 +97,28 @@ class NetworkChannel(
             }
             null
         } catch (_: Exception) {
+            null
+        }
+    }
+
+    // ───────────────────── RSSI الشبكة الحالية ─────────────────────
+
+    /**
+     * قوة إشارة الشبكة المتصلة حالياً بوحدة dBm.
+     *
+     * تُستخدم للخريطة الحرارية (أخذ عينات حقيقية أثناء التنقل).
+     * تُعاد null عند إيقاف WiFi أو غياب اتصال أو رفض الصلاحية —
+     * فيُعامل المستودع في Dart بالتدهور الآمن (إدخال يدوي).
+     */
+    private fun getWifiRssi(): Int? {
+        val wifi = context.applicationContext
+            .getSystemService(Context.WIFI_SERVICE) as? WifiManager ?: return null
+
+        @Suppress("DEPRECATION")
+        return try {
+            val rssi = wifi.connectionInfo.rssi
+            if (rssi == WifiInfo.INVALID_RSSI) null else rssi
+        } catch (_: SecurityException) {
             null
         }
     }

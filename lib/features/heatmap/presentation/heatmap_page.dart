@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +12,8 @@ import '../../../core/presentation/widgets/heatmap_widget.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/rssi_utils.dart';
+import '../data/signal_sampler.dart';
 import '../../heatmap/data/survey_repository_impl.dart';
 
 /// قائمة مسوحات المواقع المحفوظة + زر إنشاء مسح جديد.
@@ -148,29 +152,123 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
   List<SignalSample> _samples = const [];
   bool _saving = false;
 
-  void _addSample(Offset localPosition, Size size) {
+  /// مصدر قراءة الإشارة — الافتراضي: تلقائي على Android، يدوي على iOS.
+  SignalSourceMode _mode =
+      defaultModeForPlatform(isIOS: Platform.isIOS);
+
+  void _setMode(SignalSourceMode mode) {
+    if (mode == _mode) return;
+    setState(() => _mode = mode);
+  }
+
+  Future<void> _addSampleAt(Offset localPosition, Size size) async {
     // موضع نسبي على الخريطة (0–1).
     final x = (localPosition.dx / size.width).clamp(0.0, 1.0);
     final y = (localPosition.dy / size.height).clamp(0.0, 1.0);
 
-    // قوة إشارة تجريبية: أقرب للمركز أقوى (محاكاة تغطية نقطة وصول وسطية).
-    // في النسخة النهائية تُقرأ RSSI الحقيقية من مسح WiFi الأصلي.
-    final distance =
-        (((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))) * 2;
-    final rssi = (-42 - distance * 70).clamp(-95, -40).round();
-
-    setState(() {
-      _samples = [
-        ..._samples,
-        SignalSample(
-          rssi: rssi,
-          x: x,
-          y: y,
-          capturedAt: DateTime.now(),
-        ),
-      ];
-    });
+    switch (_mode) {
+      case SignalSourceMode.auto:
+        final rssi =
+            await ref.read(signalSamplerProvider).readConnectedRssi();
+        if (!mounted) return;
+        if (rssi == null) {
+          _hint(AppStrings.heatmapAutoUnavailable);
+          return;
+        }
+        _commit(rssi, x, y);
+      case SignalSourceMode.manual:
+        final rssi = await _askManualRssi();
+        if (rssi == null) return;
+        _commit(rssi, x, y);
+      case SignalSourceMode.demo:
+        // محاكاة معلَنة: أقرب للمركز أقوى. لأغراض العرض فقط.
+        final distance =
+            (((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))) * 2;
+        final rssi = (-42 - distance * 70).clamp(-95, -40).round();
+        _commit(rssi, x, y, persist: false);
+    }
   }
+
+  void _commit(int rssi, double x, double y, {bool persist = true}) {
+    final sample = SignalSample(
+      rssi: rssi,
+      x: x,
+      y: y,
+      capturedAt: DateTime.now(),
+    );
+    setState(() => _samples = [..._samples, sample]);
+    // عينات الوضع التجريبي لا تُحفظ — قيم غير حقيقية.
+    if (persist) _persistSample(sample);
+  }
+
+  void _hint(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  /// حوار إدخال يدوي: منزلق dBm مع تصنيف الجودة لحظياً.
+  Future<int?> _askManualRssi() {
+    int value = -60;
+    return showDialog<int>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDialogState) => AlertDialog(
+          title: Text(AppStrings.heatmapManualTitle),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                '$value dBm',
+                style: ctx.textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+              Text(
+                _qualityLabel(RssiUtils.qualityOf(value)),
+                style: ctx.textTheme.bodySmall
+                    ?.copyWith(color: _qualityColor(RssiUtils.qualityOf(value))),
+              ),
+              Slider(
+                value: value.toDouble(),
+                min: -95,
+                max: -35,
+                divisions: 60,
+                label: '$value',
+                onChanged: (v) =>
+                    setDialogState(() => value = v.round()),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text(AppStrings.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(ctx, value),
+              child: const Text(AppStrings.add),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _qualityLabel(RssiQuality q) => switch (q) {
+        RssiQuality.excellent => AppStrings.rssiExcellent,
+        RssiQuality.good => AppStrings.rssiGood,
+        RssiQuality.fair => AppStrings.rssiFair,
+        RssiQuality.weak => AppStrings.rssiWeak,
+        RssiQuality.veryPoor => AppStrings.rssiVeryPoor,
+      };
+
+  Color _qualityColor(RssiQuality q) => switch (q) {
+        RssiQuality.excellent => AppColors.success,
+        RssiQuality.good => AppColors.accent,
+        RssiQuality.fair => AppColors.warning,
+        RssiQuality.weak => AppColors.error,
+        RssiQuality.veryPoor => AppColors.error,
+      };
 
   Future<void> _persistSample(SignalSample sample) async {
     await ref.read(surveyRepositoryProvider).addSample(widget.surveyId, sample);
@@ -178,27 +276,79 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
 
   @override
   Widget build(BuildContext context) {
+    final isDemo = _mode == SignalSourceMode.demo;
     return AppBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
           title: Text(widget.surveyName),
           actions: [
-            IconButton(
-              tooltip: AppStrings.export,
-              icon: const Icon(Icons.picture_as_pdf_rounded),
-              onPressed: _exportPdf,
-            ),
+            // التصدير متاح للبيانات الحقيقية فقط.
+            if (!isDemo)
+              IconButton(
+                tooltip: AppStrings.export,
+                icon: const Icon(Icons.picture_as_pdf_rounded),
+                onPressed: _exportPdf,
+              ),
           ],
         ),
         body: SafeArea(
           child: ListView(
             padding: context.responsivePadding,
             children: [
+              // ── اختيار مصدر القياس ──
+              Wrap(
+                spacing: AppSpacing.sm,
+                runSpacing: AppSpacing.sm,
+                children: [
+                  ChoiceChip(
+                    label: Text(AppStrings.heatmapModeAuto),
+                    selected: _mode == SignalSourceMode.auto,
+                    onSelected: (_) => _setMode(SignalSourceMode.auto),
+                  ),
+                  ChoiceChip(
+                    label: Text(AppStrings.heatmapModeManual),
+                    selected: _mode == SignalSourceMode.manual,
+                    onSelected: (_) => _setMode(SignalSourceMode.manual),
+                  ),
+                  ChoiceChip(
+                    label: Text(AppStrings.heatmapModeDemo),
+                    selected: isDemo,
+                    onSelected: (_) => _setMode(SignalSourceMode.demo),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.sm),
               Text(
-                AppStrings.heatmapHint,
+                switch (_mode) {
+                  SignalSourceMode.auto => AppStrings.heatmapAutoHint,
+                  SignalSourceMode.manual => AppStrings.heatmapManualHint,
+                  SignalSourceMode.demo => AppStrings.heatmapDemoHint,
+                },
                 style: context.textTheme.bodySmall,
               ),
+
+              // ── بانر الوضع التجريبي (إفصاح صريح) ──
+              if (isDemo) ...[
+                const SizedBox(height: AppSpacing.md),
+                GlassCard(
+                  borderColor: AppColors.warning,
+                  child: Row(
+                    children: [
+                      const Icon(Icons.warning_amber_rounded,
+                          color: AppColors.warning),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Text(
+                          AppStrings.heatmapDemoBanner,
+                          style: context.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.warning),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.lg),
               LayoutBuilder(
                 builder: (context, constraints) {
@@ -206,9 +356,8 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
                   const height = 320.0;
                   return GestureDetector(
                     onTapDown: (details) {
-                      _addSample(details.localPosition, Size(width, height));
-                      final last = _samples.last;
-                      _persistSample(last);
+                      _addSampleAt(
+                          details.localPosition, Size(width, height));
                     },
                     child: HeatmapWidget(
                       samples: _samples,

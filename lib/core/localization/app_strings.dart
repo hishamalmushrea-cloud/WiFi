@@ -461,4 +461,56 @@ abstract class AppStrings {
   static const String statsLoadFailed = 'تعذّرت قراءة الإحصائيات';
   static String prefixLabel(int prefix) => 'البادئة: /$prefix';
   static String searchHintDots(String label) => '$label… (IP, MAC, اسم)';
+
+  // ── عام: إضافة ──────────────────────────────────────────────
+  static const String add = 'إضافة';
+
+  // ── قفل التطبيق (المرحلة أ — موثوقية) ───────────────────────
+  static const String appLockReason =
+      'فتح نت كونترول للوصول إلى بيانات شبكتك المحمية.';
+  static const String appLockTitle = 'التطبيق مقفل';
+  static const String appLockHint =
+      'أكّد هويتك للوصول إلى بيانات الشبكة وكلمات المرور المحفوظة.';
+  static const String appLockUnlock = 'فتح بالبصمة';
+  static const String appLockUnavailable =
+      'لا يمكن تفعيل القفل: لا يوجد قفل شاشة (رمز/بصمة) على هذا الجهاز. فعّل قفل الشاشة من إعدادات النظام أولاً.';
+
+  // ── الخريطة الحرارية: مصادر القياس الصادقة ───────────────────
+  static const String heatmapModeAuto = 'قياس تلقائي';
+  static const String heatmapModeManual = 'إدخال يدوي';
+  static const String heatmapModeDemo = 'وضع تجريبي';
+  static const String heatmapAutoHint =
+      'انقر على الخريطة في موضعك — تُقرأ قوة إشارة الشبكة المتصلة تلقائياً (يتطلب WiFi مفعّلاً).';
+  static const String heatmapManualHint =
+      'انقر على الخريطة في موضعك ثم أدخل قراءة الإشارة من جهازك — مناسب لأي منصة.';
+  static const String heatmapDemoHint =
+      'قيم محاكاة لأغراض استكشاف الواجهة فقط.';
+  static const String heatmapDemoBanner =
+      'بيانات محاكاة للعرض فقط — القيم غير حقيقية ولن تُحفظ في هذا المسح.';
+  static const String heatmapAutoUnavailable =
+      'تعذّرت قراءة الإشارة تلقائياً (تأكد من اتصال WiFi). بدّل إلى الإدخال اليدوي لإدخال القيمة بنفسك.';
+  static const String heatmapManualTitle = 'قوة الإشارة في هذه النقطة';
+
+  // ── تصنيف جودة RSSI ─────────────────────────────────────────
+  static const String rssiExcellent = 'ممتازة';
+  static const String rssiGood = 'جيدة';
+  static const String rssiFair = 'مقبولة';
+  static const String rssiWeak = 'ضعيفة';
+  static const String rssiVeryPoor = 'ضعيفة جداً';
+
+  // ── شاشة دعم المنصات وقيود iOS ──────────────────────────────
+  static const String platformLimitsTitle = 'دعم المنصات وقيود iOS';
+  static const String platformLimitsIntroTitle = 'لماذا يختلف السلوك بين المنصتين؟';
+  static const String platformLimitsIntro =
+      'نُفصح بوضوح عما يعمله التطبيق على كل منصة. Apple تقيّد واجهات الشبكة على iOS '
+      'بشكل جذري (لا مسح للشبكات المحيطة، لا قراءة RSSI، لا التقاط حزم) — بينما '
+      'نوفر بدائل آمنة أينما أمكن. الميزات الموسومة أدناه تعمل كما هي على Android.';
+  static const String platformLimitsLimitedSection = 'ميزات بقيود على iOS';
+  static const String platformLimitsFullSection = 'تعمل بالكامل على المنصتين';
+  static const String supportFull = 'كامل';
+  static const String supportPartial = 'جزئي';
+  static const String supportUnavailable = 'غير متاح';
+  static const String settingsPlatformLimits = 'دعم المنصات وقيود iOS';
+  static const String settingsPlatformLimitsHint =
+      'ما الذي يعمل على جهازك — ومَ لا يعمل ولماذا.';
 }

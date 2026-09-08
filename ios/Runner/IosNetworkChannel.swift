@@ -29,6 +29,11 @@ class IosNetworkChannel: NSObject, FlutterPlugin {
             result(getNetworkInfo())
         case "getArpTable":
             result([String: String]()) // غير متاح بدون جيلبريك.
+        case "getWifiRssi":
+            // لا يتيح iOS قراءة RSSI للشبكة الحالية عبر واجهات عامة
+            // (NEHotspotNetwork.signalStrength تتطلب امتياز Hotspot Helper
+            // الخاص). نُرجع null فيستخدم التطبيق الإدخال اليدوي.
+            result(nil)
         case "scanWifi":
             result(FlutterError(
                 code: "UNSUPPORTED",

@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'core/constants/app_constants.dart';
 import 'core/localization/app_strings.dart';
 import 'core/theme/app_theme.dart';
+import 'features/settings/presentation/app_lock_gate.dart';
 import 'features/splash/presentation/app_gate.dart';
 
 /// الجذر البصري للتطبيق.

@@ -68,7 +68,11 @@ class SettingsPage extends ConsumerWidget {
                 children: [
                   SwitchListTile(
                     value: settings.appLockEnabled,
-                    onChanged: notifier.setAppLock,
+                    onChanged: (enabled) => _onAppLockToggle(
+                      context: context,
+                      ref: ref,
+                      enabled: enabled,
+                    ),
                     title: const Text(AppStrings.settingsAppLock),
                     secondary: const Icon(Icons.fingerprint_rounded,
                         color: AppColors.accent),
@@ -88,6 +92,19 @@ class SettingsPage extends ConsumerWidget {
                       root.isRooted
                           ? AppStrings.rootAvailable
                           : AppStrings.rootNotAvailable,
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.balance_rounded,
+                        color: AppColors.accent),
+                    title: const Text(AppStrings.settingsPlatformLimits),
+                    subtitle: Text(AppStrings.settingsPlatformLimitsHint),
+                    trailing: const Icon(Icons.chevron_left_rounded),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const PlatformLimitsPage(),
+                      ),
                     ),
                   ),
                 ],
@@ -157,6 +174,33 @@ class SettingsPage extends ConsumerWidget {
         ),
       ),
     );
+  }
+
+  /// تفعيل القفل: نتحقق أولاً من قدرة الجهاز على المصادقة (وجود
+  /// قفل شاشة) — وإلا نرفض التفعيل مع شرح السبب بدل تعطيل مستخدم
+  /// يفعّل خياراً لن يعمل.
+  Future<void> _onAppLockToggle({
+    required BuildContext context,
+    required WidgetRef ref,
+    required bool enabled,
+  }) async {
+    if (!enabled) {
+      await ref.read(settingsProvider.notifier).setAppLock(false);
+      return;
+    }
+
+    final available = await ref.read(appLockServiceProvider).isAvailable();
+    if (!available) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text(AppStrings.appLockUnavailable)),
+          );
+      }
+      return;
+    }
+    await ref.read(settingsProvider.notifier).setAppLock(true);
   }
 
   Future<void> _wigleDialog(BuildContext context, WidgetRef ref) async {
