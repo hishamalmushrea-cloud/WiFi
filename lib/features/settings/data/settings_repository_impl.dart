@@ -18,7 +18,7 @@ class SettingsRepositoryImpl implements SettingsRepository {
 
   @override
   Future<Result<AppSettings>> getSettings() async =>
-      guard(_source.read);
+      guard(() async => _source.read());
 
   @override
   Future<Result<void>> setThemeMode(ThemeMode mode) =>

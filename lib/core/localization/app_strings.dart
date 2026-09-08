@@ -143,7 +143,6 @@ abstract class AppStrings {
   static const String scanNetworkTitle = 'فحص الشبكة';
   static const String scanStart = 'بدء الفحص';
   static const String scanning = 'جارٍ الفحص…';
-  static const String scanProgress = 'تم فحص {scanned} من {total} عنوان';
   static const String scanDevicesFound = 'عُثر على {count} جهاز';
   static const String scanComplete = 'اكتمل الفحص';
   static const String lanInfo = 'الشبكة المحلية';
