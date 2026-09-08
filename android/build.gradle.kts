@@ -7,9 +7,8 @@ allprojects {
         mavenCentral()
     }
 
-    // بعض إضافات Flutter (مثل flutter_blue_plus) لا تُصرّح compileSdk
-    // فتُفشل على AGP 8: "compileSdkVersion is not specified".
-    // نفرضها على كل الوحدات لضمان بناء متّسق.
+    // بعض إضافات Flutter لا تُصرّح compileSdk فتُفشل على AGP 8
+    // ("compileSdkVersion is not specified")، نفرضها قبل التقييم.
     project.plugins.withId("com.android.library") {
         extensions.configure<com.android.build.gradle.LibraryExtension> {
             if (compileSdk == null) compileSdk = 34
