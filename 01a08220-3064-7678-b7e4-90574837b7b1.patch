@@ -1,0 +1,1858 @@
+diff --git a/README.md b/README.md
+index 7991e6b..4aee57b 100644
+--- a/README.md
++++ b/README.md
+@@ -53,6 +53,7 @@ flutter run
+ | 10 | الشاشات المتقدمة (خط زمني النشاط، خريطة حرارية/مسح موقع، Wardriving بـGPS+OpenStreetMap، التقاط حزم/محلل بروتوكولات/كشف MITM محمية بـRoot Gate، Wake-on-LAN) | ✅ |
+ | 11 | الكود الأصلي (Kotlin / Swift): فحص Root/جيلبريك، معلومات الشبكة وجدول ARP ومسح WiFi على Android، التقاط حزم عبر tcpdump/EventChannel، معلومات الشبكة على iOS | ✅ |
+ | 12 | الربط والتلميع (توحيد 170+ نص في app_strings، دوال تنسيق ديناميكية، اختبارات وحدة للمنطق الخالص) | ✅ |
++| 13 | موثوقية وصدق (v1.1): قفل التطبيق فعلياً بـ local_auth (بصمة/Face ID/رمز)، خريطة حرارية بقياس RSSI حقيقي (Android) أو إدخال يدوي مع إفصاح صريح للوضع التجريبي، شاشة «دعم المنصات وقيود iOS»، جسر getWifiRssi أصلي، وCI يفحص (analyze+test) قبل البناء | ✅ |
+ 
+ ## 🏗️ البنية
+ 
+diff --git a/android/app/src/main/AndroidManifest.xml b/android/app/src/main/AndroidManifest.xml
+index ad295b4..25f28d7 100644
+--- a/android/app/src/main/AndroidManifest.xml
++++ b/android/app/src/main/AndroidManifest.xml
+@@ -9,6 +9,8 @@
+     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
+     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
++    <!-- قفل التطبيق بالبصمة (BiometricPrompt عبر local_auth) -->
++    <uses-permission android:name="android.permission.USE_BIOMETRIC" />
+ 
+     <!-- مسح WiFi المحيط (Android 13+) — يحتاج موافقة المستخدم -->
+     <uses-permission
+diff --git a/android/app/src/main/kotlin/com/netcontrol/app/MainActivity.kt b/android/app/src/main/kotlin/com/netcontrol/app/MainActivity.kt
+index cf25250..0bd2f95 100644
+--- a/android/app/src/main/kotlin/com/netcontrol/app/MainActivity.kt
++++ b/android/app/src/main/kotlin/com/netcontrol/app/MainActivity.kt
+@@ -1,6 +1,6 @@
+ package com.netcontrol.app
+ 
+-import io.flutter.embedding.android.FlutterActivity
++import io.flutter.embedding.android.FlutterFragmentActivity
+ import io.flutter.embedding.engine.FlutterEngine
+ import com.netcontrol.app.native.NativeChannels
+ 
+@@ -9,10 +9,14 @@ import com.netcontrol.app.native.NativeChannels
+  *
+  * تسجّل كل الجسور الأصلية عند إنشاء المحرّك:
+  *  - RootCheckerChannel   : فحص صلاحيات الجذر بأربع طرق
+- *  - NetworkChannel       : معلومات الشبكة، جدول ARP، مسح WiFi
++ *  - NetworkChannel       : معلومات الشبكة، جدول ARP، مسح WiFi، RSSI
+  *  - PacketCaptureChannel : التقاط حزم مباشر عبر tcpdump/EventChannel
++ *
++ * نرث من FlutterFragmentActivity (وليس FlutterActivity) لأن مكوّن
++ * local_auth يعرض نافذة البصمة عبر BiometricPrompt التي تتطلب
++ * FragmentActivity — وإلا يفشل قفل التطبيق على Android.
+  */
+-class MainActivity : FlutterActivity() {
++class MainActivity : FlutterFragmentActivity() {
+     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+         super.configureFlutterEngine(flutterEngine)
+         NativeChannels.register(applicationContext, flutterEngine)
+diff --git a/android/app/src/main/kotlin/com/netcontrol/app/native/NetworkChannel.kt b/android/app/src/main/kotlin/com/netcontrol/app/native/NetworkChannel.kt
+index ee2e011..ac972fc 100644
+--- a/android/app/src/main/kotlin/com/netcontrol/app/native/NetworkChannel.kt
++++ b/android/app/src/main/kotlin/com/netcontrol/app/native/NetworkChannel.kt
+@@ -39,6 +39,7 @@ class NetworkChannel(
+         when (call.method) {
+             "getNetworkInfo" -> result.success(getNetworkInfo())
+             "getArpTable" -> result.success(getArpTable())
++            "getWifiRssi" -> result.success(getWifiRssi())
+             "scanWifi" -> try {
+                 result.success(scanWifi())
+             } catch (e: PermissionDeniedException) {
+@@ -100,6 +101,28 @@ class NetworkChannel(
+         }
+     }
+ 
++    // ───────────────────── RSSI الشبكة الحالية ─────────────────────
++
++    /**
++     * قوة إشارة الشبكة المتصلة حالياً بوحدة dBm.
++     *
++     * تُستخدم للخريطة الحرارية (أخذ عينات حقيقية أثناء التنقل).
++     * تُعاد null عند إيقاف WiFi أو غياب اتصال أو رفض الصلاحية —
++     * فيُعامل المستودع في Dart بالتدهور الآمن (إدخال يدوي).
++     */
++    private fun getWifiRssi(): Int? {
++        val wifi = context.applicationContext
++            .getSystemService(Context.WIFI_SERVICE) as? WifiManager ?: return null
++
++        @Suppress("DEPRECATION")
++        return try {
++            val rssi = wifi.connectionInfo.rssi
++            if (rssi == WifiInfo.INVALID_RSSI) null else rssi
++        } catch (_: SecurityException) {
++            null
++        }
++    }
++
+     // ───────────────────── جدول ARP ─────────────────────
+ 
+     /**
+diff --git a/docs/ci/build-apk.yml b/docs/ci/build-apk.yml
+new file mode 100644
+index 0000000..8a499fb
+--- /dev/null
++++ b/docs/ci/build-apk.yml
+@@ -0,0 +1,139 @@
++# سير عمل CI المحدّث — انسخ هذا المحتوى كاملاً إلى
++# .github/workflows/build-apk.yml عبر محرر GitHub على فرع
++# arena/01a08220-wifi (زر Commit مباشرة إلى الفرع).
++#
++# الجديد عن النسخة الحالية:
++#  1. خطوة "فحص الكود قبل البناء": flutter analyze --no-fatal-infos
++#     ثم flutter test — الفشل يوقف البناء.
++#  2. تقرير الفشل في Issue يشمل سجل الفحص أيضاً.
++#  3. التشغيل على كل فروع arena/*-wifi.
++name: Build Android APK
++
++on:
++  push:
++    branches: [arena/*-wifi]
++  workflow_dispatch:
++
++permissions:
++  contents: write
++  issues: write
++
++jobs:
++  build:
++    name: بناء APK
++    runs-on: ubuntu-latest
++    steps:
++      - name: سحب الكود
++        uses: actions/checkout@v4
++
++      - name: تثبيت Java 17
++        uses: actions/setup-java@v4
++        with:
++          distribution: temurin
++          java-version: '17'
++
++      - name: تثبيت Flutter
++        uses: subosito/flutter-action@v2
++        with:
++          channel: stable
++          flutter-version: '3.24.5'
++
++      - name: إصدارات الأدوات
++        run: |
++          flutter --version
++          dart --version
++
++      - name: فحص الكود قبل البناء (analyze + test)
++        id: check
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          {
++            echo "===== flutter analyze ====="
++            flutter analyze --no-fatal-infos
++            echo "===== flutter test ====="
++            flutter test
++          } 2>&1 | tee check.log
++
++      # pub get — نلتقط النتيجة الرسمية عبر steps.pub.outcome (لا نعتمد على نص).
++      - name: تنزيل الحزم (pub get)
++        id: pub
++        if: steps.check.outcome == 'success'
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          flutter pub get 2>&1 | tee pub_get.log
++
++      # توليد الكود والبناء في خطوة واحدة تُسجَّل بالكامل.
++      - name: توليد الكود وبناء APK
++        id: build
++        if: steps.pub.outcome == 'success'
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          {
++            echo "===== build_runner ====="
++            dart run build_runner build --delete-conflicting-outputs
++            echo "===== flutter build apk ====="
++            flutter build apk --release
++          } 2>&1 | tee build.log
++
++      # عند أي فشل: انشر السبب الجذري في Issue عام ليُقرأ من خارج Actions.
++      - name: نشر سبب الفشل في Issue
++        if: steps.check.outcome == 'failure' || steps.pub.outcome == 'failure' || steps.build.outcome == 'failure'
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: |
++          {
++            echo "## فشل بناء APK"
++            echo ""
++            echo "الالتزام: ${GITHUB_SHA::7}"
++            echo ""
++            if [ -f check.log ]; then
++              echo "### فحص الكود (analyze/test)"
++              echo '```'
++              tail -n 120 check.log
++              echo '```'
++            fi
++            if [ -f pub_get.log ]; then
++              echo "### pub get"
++              echo '```'
++              tail -n 70 pub_get.log
++              echo '```'
++            fi
++            if [ -f build.log ]; then
++              echo "### build_runner / flutter build"
++              echo '```'
++              tail -n 160 build.log
++              echo '```'
++            fi
++          } > issue_body.md
++          gh issue create --title "❗ خطأ بناء APK (${GITHUB_SHA::7})" --body-file issue_body.md || true
++          exit 1
++
++      - name: إعادة تسمية الملف
++        if: steps.build.outcome == 'success'
++        run: |
++          cp build/app/outputs/flutter-apk/app-release.apk netcontrol-latest.apk
++          ls -lh netcontrol-latest.apk
++
++      - name: رفع APK كأرتيفكت
++        if: steps.build.outcome == 'success'
++        uses: actions/upload-artifact@v4
++        with:
++          name: netcontrol-apk
++          path: netcontrol-latest.apk
++          retention-days: 30
++
++      - name: نشر Release مع APK
++        if: steps.build.outcome == 'success'
++        uses: softprops/action-gh-release@v2
++        with:
++          tag_name: apk-latest
++          name: نت كونترول — NetControl APK
++          body: |
++            ملف APK جاهز للتثبيت على Android.
++            نزّل netcontrol-latest.apk ثم فعّل «التثبيت من مصادر غير معروفة».
++          files: netcontrol-latest.apk
++        env:
++          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+diff --git a/docs/ci/build-ipa.yml b/docs/ci/build-ipa.yml
+new file mode 100644
+index 0000000..ee3b084
+--- /dev/null
++++ b/docs/ci/build-ipa.yml
+@@ -0,0 +1,151 @@
++# سير عمل CI المحدّث — انسخ هذا المحتوى كاملاً إلى
++# .github/workflows/build-ipa.yml عبر محرر GitHub على فرع
++# arena/01a08220-wifi (زر Commit مباشرة إلى الفرع).
++#
++# الجديد عن النسخة الحالية:
++#  1. خطوة "فحص الكود قبل البناء": flutter analyze --no-fatal-infos
++#     ثم flutter test — الفشل يوقف البناء.
++#  2. تقرير الفشل في Issue يشمل سجل الفحص أيضاً.
++name: Build iOS IPA
++
++on:
++  push:
++    branches: [arena/*-wifi]
++  workflow_dispatch:
++
++permissions:
++  contents: write
++  issues: write
++
++jobs:
++  build:
++    name: بناء IPA
++    # macos-14 يضمن توفر Xcode 15.4 — آخر إصدار يدعمه Flutter 3.24.5 رسمياً.
++    runs-on: macos-14
++    steps:
++      - name: سحب الكود
++        uses: actions/checkout@v4
++
++      - name: تثبيت Xcode 15.4
++        run: |
++          sudo xcode-select -s /Applications/Xcode_15.4.app
++          xcodebuild -version
++
++      - name: تثبيت Flutter
++        uses: subosito/flutter-action@v2
++        with:
++          channel: stable
++          flutter-version: '3.24.5'
++
++      - name: إصدارات الأدوات
++        run: |
++          flutter --version
++          pod --version
++
++      - name: فحص الكود قبل البناء (analyze + test)
++        id: check
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          {
++            echo "===== flutter analyze ====="
++            flutter analyze --no-fatal-infos
++            echo "===== flutter test ====="
++            flutter test
++          } 2>&1 | tee check.log
++
++      - name: تنزيل الحزم (pub get)
++        id: pub
++        if: steps.check.outcome == 'success'
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          flutter pub get 2>&1 | tee pub_get.log
++
++      - name: توليد الكود وبناء IPA
++        id: build
++        if: steps.pub.outcome == 'success'
++        continue-on-error: true
++        run: |
++          set -o pipefail
++          {
++            echo "===== build_runner ====="
++            dart run build_runner build --delete-conflicting-outputs
++            echo "===== flutter build ipa ====="
++            flutter build ipa --release --no-codesign
++          } 2>&1 | tee build.log
++
++      - name: نشر سبب الفشل في Issue
++        if: steps.check.outcome == 'failure' || steps.pub.outcome == 'failure' || steps.build.outcome == 'failure'
++        env:
++          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
++        run: |
++          {
++            echo "## فشل بناء IPA (iOS)"
++            echo ""
++            echo "الالتزام: ${GITHUB_SHA::7}"
++            echo ""
++            if [ -f check.log ]; then
++              echo "### فحص الكود (analyze/test)"
++              echo '```'
++              tail -n 120 check.log
++              echo '```'
++            fi
++            if [ -f pub_get.log ]; then
++              echo "### pub get"
++              echo '```'
++              tail -n 70 pub_get.log
++              echo '```'
++            fi
++            if [ -f build.log ]; then
++              echo "### build_runner / flutter build ipa"
++              echo '```'
++              tail -n 200 build.log
++              echo '```'
++            fi
++          } > issue_body.md
++          gh issue create --title "❗ خطأ بناء IPA (${GITHUB_SHA::7})" --body-file issue_body.md || true
++          exit 1
++
++      - name: تجميع الملف
++        if: steps.build.outcome == 'success'
++        run: |
++          if [ -f build/ios/ipa/Runner.ipa ]; then
++            echo "✓ flutter أنتج IPA مباشرة"
++            cp build/ios/ipa/Runner.ipa netcontrol-latest.ipa
++          elif [ -d build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app ]; then
++            echo "→ flutter لم ينتج IPA (بسبب --no-codesign) — تجميعه يدوياً من الأرشيف"
++            rm -rf Payload netcontrol-latest.ipa
++            mkdir Payload
++            cp -R build/ios/archive/Runner.xcarchive/Products/Applications/Runner.app Payload/Runner.app
++            zip -qry netcontrol-latest.ipa Payload
++            rm -rf Payload
++          else
++            echo "❌ لم يُعثر على IPA ولا أرشيف Xcode" && exit 1
++          fi
++          ls -lh netcontrol-latest.ipa
++
++      - name: رفع IPA كأرتيفكت
++        if: steps.build.outcome == 'success'
++        uses: actions/upload-artifact@v4
++        with:
++          name: netcontrol-ipa
++          path: netcontrol-latest.ipa
++          retention-days: 30
++
++      - name: نشر Release مع IPA
++        if: steps.build.outcome == 'success'
++        uses: softprops/action-gh-release@v2
++        with:
++          tag_name: ipa-latest
++          name: نت كونترول — NetControl IPA
++          body: |
++            ملف IPA غير موقّع (development) — يدعم iOS 14.0+.
++
++            **التثبيت:**
++            - عبر **Sideloadly** أو **AltStore** على أي جهاز كمبيوتر
++              (يُعاد التوقيع تلقائياً بأي Apple ID، وبدون حساب مطوّر).
++            - أو مباشرة على جهاز iOS jailbreak.
++          files: netcontrol-latest.ipa
++        env:
++          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+diff --git a/ios/Runner.xcodeproj/project.pbxproj b/ios/Runner.xcodeproj/project.pbxproj
+index 35d1191..e1e32c6 100644
+--- a/ios/Runner.xcodeproj/project.pbxproj
++++ b/ios/Runner.xcodeproj/project.pbxproj
+@@ -15,7 +15,7 @@
+ 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
+ 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+ 		A10000000000000000000001 /* IosNetworkChannel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* IosNetworkChannel.swift */; };
+-		A10000000000000000000002 /* JailbreakDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A200000000000000000000002 /* JailbreakDetector.swift */; };
++		A10000000000000000000002 /* JailbreakDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* JailbreakDetector.swift */; };
+ /* End PBXBuildFile section */
+ 
+ /* Begin PBXContainerItemProxy section */
+@@ -121,7 +121,7 @@
+ 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
+ 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
+ 				A20000000000000000000001 /* IosNetworkChannel.swift */,
+-				A200000000000000000000002 /* JailbreakDetector.swift */,
++				A20000000000000000000002 /* JailbreakDetector.swift */,
+ 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
+ 			);
+ 			path = Runner;
+diff --git a/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme b/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
+index 8456230..32f291e 100644
+--- a/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
++++ b/ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme
+@@ -94,5 +94,24 @@
+    <ArchiveAction
+       buildConfiguration = "Release"
+       revealArchiveInOrganizer = "YES">
++      <PostActions>
++         <ExecutionAction
++            ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
++            <ActionContent
++               title = "إنشاء IPA غير موقّع من الأرشيف"
++               scriptText = "bash &quot;$PROJECT_DIR/make_unsigned_ipa.sh&quot;"
++               shellToInvoke = "/bin/sh">
++               <EnvironmentBuildable>
++                  <BuildableReference
++                     BuildableIdentifier = "primary"
++                     BlueprintIdentifier = "97C146ED1CF9000F007C117D"
++                     BuildableName = "Runner.app"
++                     BlueprintName = "Runner"
++                     ReferencedContainer = "container:Runner.xcodeproj">
++                  </BuildableReference>
++               </EnvironmentBuildable>
++            </ActionContent>
++         </ExecutionAction>
++      </PostActions>
+    </ArchiveAction>
+ </Scheme>
+diff --git a/ios/Runner/IosNetworkChannel.swift b/ios/Runner/IosNetworkChannel.swift
+index 5f98890..c6badc1 100644
+--- a/ios/Runner/IosNetworkChannel.swift
++++ b/ios/Runner/IosNetworkChannel.swift
+@@ -29,6 +29,11 @@ class IosNetworkChannel: NSObject, FlutterPlugin {
+             result(getNetworkInfo())
+         case "getArpTable":
+             result([String: String]()) // غير متاح بدون جيلبريك.
++        case "getWifiRssi":
++            // لا يتيح iOS قراءة RSSI للشبكة الحالية عبر واجهات عامة
++            // (NEHotspotNetwork.signalStrength تتطلب امتياز Hotspot Helper
++            // الخاص). نُرجع null فيستخدم التطبيق الإدخال اليدوي.
++            result(nil)
+         case "scanWifi":
+             result(FlutterError(
+                 code: "UNSUPPORTED",
+diff --git a/ios/make_unsigned_ipa.sh b/ios/make_unsigned_ipa.sh
+new file mode 100755
+index 0000000..ad86914
+--- /dev/null
++++ b/ios/make_unsigned_ipa.sh
+@@ -0,0 +1,63 @@
++#!/bin/bash
++# ─────────────────────────────────────────────────────────────────────────────
++# NetControl — إنشاء IPA غير موقّع بعد الأرشفة
++#
++# يُشغَّل تلقائياً كـ Post-Action ضمن ArchiveAction في سكيم Runner
++# (انظر ios/Runner.xcodeproj/xcshareddata/xcschemes/Runner.xcscheme).
++#
++# السبب: أمر `flutter build ipa --no-codesign` (حتى Flutter 3.24.x) يبني
++# xcarchive فقط ثم يطبع "skipping IPA" ويعود دون إنشاء الملف — بينما تتوقع
++# خطوات CI وجود build/ios/ipa/Runner.ipa. هذا السكربت يجمّعه من الأرشيف.
++#
++# التصميم:
++#  - يعمل فقط عندما يكون التوقيع معطلاً (flutter يمرر CODE_SIGNING_ALLOWED=NO).
++#  - لا يلمس IPA موجوداً (لا يستبدل ملفاً موقّعاً أنتجه flutter أو Xcode).
++#  - أي فشل داخلي يخرج بصمت دون إفساد الأرشفة (exit 0 دائماً).
++# ─────────────────────────────────────────────────────────────────────────────
++
++PROJECT_DIR="${PROJECT_DIR:-}"
++
++# لا نعمل إلا عند تعطيل التوقيع (flutter --no-codesign يمرر CODE_SIGNING_ALLOWED=NO).
++if [ "${CODE_SIGNING_ALLOWED:-}" != "NO" ] || [ -z "$PROJECT_DIR" ]; then
++    exit 0
++fi
++
++# جذر مشروع Flutter (المجلد الأب لمجلد ios/).
++REPO_ROOT="$(cd "$PROJECT_DIR/.." 2>/dev/null && pwd)" || exit 0
++[ -n "$REPO_ROOT" ] || exit 0
++
++# أحدث أرشيف أنتجه xcodebuild (flutter يمرر المسار المطلق عبر -archivePath).
++ARCHIVE="$(ls -d "$REPO_ROOT"/build/ios/archive/*.xcarchive 2>/dev/null | head -n 1 || true)"
++if [ -z "$ARCHIVE" ] || [ ! -d "$ARCHIVE/Products/Applications/Runner.app" ]; then
++    exit 0
++fi
++
++IPA_DIR="$REPO_ROOT/build/ios/ipa"
++mkdir -p "$IPA_DIR" 2>/dev/null || exit 0
++
++# لا نستبدل IPA موجوداً (قد يكون موقّعاً من flutter أو من Xcode).
++if [ -f "$IPA_DIR/Runner.ipa" ]; then
++    exit 0
++fi
++
++# تجميع Payload/Runner.app → IPA (غير موقّع).
++cd "$REPO_ROOT" || exit 0
++rm -rf Payload
++mkdir Payload
++cp -R "$ARCHIVE/Products/Applications/Runner.app" Payload/Runner.app
++if [ ! -d Payload/Runner.app ]; then
++    rm -rf Payload
++    exit 0
++fi
++
++# ‎-y تحفظ الروابط الرمزية داخل الـ Frameworks كما هي.
++/usr/bin/zip -qry "$IPA_DIR/Runner.ipa" Payload
++STATUS=$?
++rm -rf Payload
++if [ "$STATUS" -ne 0 ]; then
++    rm -f "$IPA_DIR/Runner.ipa"
++    exit 0
++fi
++
++echo "[netcontrol] تم إنشاء IPA غير موقّع: $IPA_DIR/Runner.ipa"
++exit 0
+diff --git a/lib/app.dart b/lib/app.dart
+index 539a787..a8ac05c 100644
+--- a/lib/app.dart
++++ b/lib/app.dart
+@@ -4,6 +4,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
+ import 'core/constants/app_constants.dart';
+ import 'core/localization/app_strings.dart';
+ import 'core/theme/app_theme.dart';
++import 'features/settings/presentation/app_lock_gate.dart';
+ import 'features/splash/presentation/app_gate.dart';
+ 
+ /// الجذر البصري للتطبيق.
+diff --git a/lib/core/domain/entities/platform_capabilities.dart b/lib/core/domain/entities/platform_capabilities.dart
+new file mode 100644
+index 0000000..9a27723
+--- /dev/null
++++ b/lib/core/domain/entities/platform_capabilities.dart
+@@ -0,0 +1,154 @@
++/// كتالوج قدرات المنصات — توثيق صادق لما يعمل على Android مقابل iOS.
++///
++/// ملاحظة على القاعدة الصارمة للنصوص: عناوين ووصف القدرات هنا هي
++/// بيانات محتوى (كتالوج) وليست نصوص واجهة — تبقى في هذا الملف كمصدر
++/// وحيد لها. نصوص الواجهة العامة (عناوين الشاشة، الأزرار…) في
++/// app_strings.dart كالمعتاد.
++///
++/// الهدف: أن يرى المستخدم قبل الاستخدام ما الذي تدعمه منصته، بدل
++/// اكتشاف ذلك بالصدفة — خصوصاً على iOS حيث تقيّد Apple واجهات
++/// الشبكة بشكل جذري.
++
++/// مستوى الدعم على منصة.
++enum SupportLevel {
++  /// يعمل بالكامل.
++  full,
++
++  /// يعمل جزئياً أو بتدهور آمن (نتائج أقل دقة أو ميزة بديلة).
++  partial,
++
++  /// غير متاح على هذه المنصة قيود النظام.
++  unavailable,
++}
++
++class PlatformCapability {
++  const PlatformCapability({
++    required this.title,
++    required this.description,
++    required this.android,
++    required this.ios,
++    this.iosNote,
++  });
++
++  final String title;
++  final String description;
++
++  /// مستوى الدعم على كل منصة.
++  final SupportLevel android;
++  final SupportLevel ios;
++
++  /// توضيح إضافي لسبب القيد على iOS إن وجد.
++  final String? iosNote;
++
++  bool get isLimitedOnIos => ios != SupportLevel.full;
++}
++
++abstract class PlatformCapabilities {
++  static const List<PlatformCapability> all = [
++    // ── يعمل بالكامل على المنصتين ──
++    PlatformCapability(
++      title: 'اختبار سرعة الإنترنت',
++      description:
++          'قياس التحميل والرفع والاستجابة عبر خوادم Cloudflare — لا يحتاج أي صلاحية خاصة.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++    ),
++    PlatformCapability(
++      title: 'لوحة تحكم الراوتر',
++      description:
++          'قراءة الأجهزة المتصلة، حجب MAC، وإدارة إعدادات الراوتر عبر بروتوكولات HTTP الخاصة بالمصنّعين.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++    ),
++    PlatformCapability(
++      title: 'فحص المنافذ والثغرات',
++      description:
++          'فحص منافذ الأجهزة على الشبكة المحلية من التطبيق مباشرة دون امتيازات.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++    ),
++    PlatformCapability(
++      title: 'كشف الجيلبريك / صلاحيات الروت',
++      description:
++          'فحص متعدد المؤشرات (ملفات، تطبيقات، مكتبات محقونة) عبر جسر أصلي لكل منصة.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++    ),
++    PlatformCapability(
++      title: 'قفل التطبيق بالبصمة / Face ID',
++      description:
++          'حماية التطبيق بمصادقة الجهاز الحيوية عند الإقلاع والعودة من الخلفية.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++    ),
++    PlatformCapability(
++      title: 'Wardriving وتسجيل الشبكات بالـ GPS',
++      description:
++          'تسجيل نقاط الوصول على الخريطة أثناء التنقل مع تصدير WiGLE.',
++      android: SupportLevel.full,
++      ios: SupportLevel.partial,
++      iosNote:
++          'يعمل أثناء فتح التطبيق في المقدمة؛ التشغيل الدائم في الخلفية مقيّد على iOS.',
++    ),
++    PlatformCapability(
++      title: 'الخريطة الحرارية للتغطية',
++      description:
++          'أخذ عينات قوة الإشارة على مخطط الموقع ورسم خريطة التغطية.',
++      android: SupportLevel.full,
++      ios: SupportLevel.full,
++      iosNote:
++          'على Android تُقرأ الإشارة تلقائياً؛ على iOS يُدخل المستخدم القيمة يدوياً (لا واجهة RSSI عامة).',
++    ),
++
++    // ── مقيّد على iOS ──
++    PlatformCapability(
++      title: 'مسح شبكات WiFi المحيطة',
++      description:
++          'عرض الشبكات القريبة مع القناة والتشفير وقوة الإشارة لتحليل الازدحام.',
++      android: SupportLevel.full,
++      ios: SupportLevel.unavailable,
++      iosNote:
++          'Apple لا تتيح مسح الشبكات المحيطة إلا لتطبيقات ذات امتياز خاص (Hotspot Helper). يعمل التطبيق بالنتائج المحفوظة.',
++    ),
++    PlatformCapability(
++      title: 'اكتشاف الأجهزة عبر جدول ARP',
++      description:
++          'قراءة جدول ARP النظامي لمعرفة الأجهزة المتصلة بعناوينها الفعلية.',
++      android: SupportLevel.full,
++      ios: SupportLevel.partial,
++      iosNote:
++          'قراءة جدول ARP غير متاحة؛ يقتصر الاكتشاف على فحص عناوين الشبكة (Ping Scan).',
++    ),
++    PlatformCapability(
++      title: 'التقاط حزم الشبكة (Packet Capture)',
++      description:
++          'التقاط الحزم وتحليل البروتوكولات وكشف MITM.',
++      android: SupportLevel.partial,
++      ios: SupportLevel.unavailable,
++      iosNote:
++          'يتطلب صلاحيات روت على Android، وغير ممكن نهائياً على iOS بدون جيلبريك.',
++    ),
++    PlatformCapability(
++      title: 'قراءة RSSI اللحظية للشبكة الحالية',
++      description:
++          'قياس قوة إشارة الشبكة المتصلة لحظياً لأخذ عينات دقيقة.',
++      android: SupportLevel.full,
++      ios: SupportLevel.unavailable,
++      iosNote:
++          'iOS لا يعرض RSSI إلا عبر واجهات خاصة بامتياز. البديل: الإدخال اليدوي في الخريطة الحرارية.',
++    ),
++  ];
++
++  /// تجميع مرتب للعرض: المقيّد على iOS أولاً ثم الكامل.
++  static List<PlatformCapability> get sortedForDisplay {
++    final limited =
++        all.where((c) => c.isLimitedOnIos).toList(growable: false);
++    final full =
++        all.where((c) => !c.isLimitedOnIos).toList(growable: false);
++    return [...limited, ...full];
++  }
++
++  /// مستوى الدعم لمنصة معينة.
++  static SupportLevel levelFor(PlatformCapability c, {required bool isIOS}) =>
++      isIOS ? c.ios : c.android;
++}
+diff --git a/lib/core/localization/app_strings.dart b/lib/core/localization/app_strings.dart
+index da2aa0d..6df0b30 100644
+--- a/lib/core/localization/app_strings.dart
++++ b/lib/core/localization/app_strings.dart
+@@ -461,4 +461,56 @@ abstract class AppStrings {
+   static const String statsLoadFailed = 'تعذّرت قراءة الإحصائيات';
+   static String prefixLabel(int prefix) => 'البادئة: /$prefix';
+   static String searchHintDots(String label) => '$label… (IP, MAC, اسم)';
++
++  // ── عام: إضافة ──────────────────────────────────────────────
++  static const String add = 'إضافة';
++
++  // ── قفل التطبيق (المرحلة أ — موثوقية) ───────────────────────
++  static const String appLockReason =
++      'فتح نت كونترول للوصول إلى بيانات شبكتك المحمية.';
++  static const String appLockTitle = 'التطبيق مقفل';
++  static const String appLockHint =
++      'أكّد هويتك للوصول إلى بيانات الشبكة وكلمات المرور المحفوظة.';
++  static const String appLockUnlock = 'فتح بالبصمة';
++  static const String appLockUnavailable =
++      'لا يمكن تفعيل القفل: لا يوجد قفل شاشة (رمز/بصمة) على هذا الجهاز. فعّل قفل الشاشة من إعدادات النظام أولاً.';
++
++  // ── الخريطة الحرارية: مصادر القياس الصادقة ───────────────────
++  static const String heatmapModeAuto = 'قياس تلقائي';
++  static const String heatmapModeManual = 'إدخال يدوي';
++  static const String heatmapModeDemo = 'وضع تجريبي';
++  static const String heatmapAutoHint =
++      'انقر على الخريطة في موضعك — تُقرأ قوة إشارة الشبكة المتصلة تلقائياً (يتطلب WiFi مفعّلاً).';
++  static const String heatmapManualHint =
++      'انقر على الخريطة في موضعك ثم أدخل قراءة الإشارة من جهازك — مناسب لأي منصة.';
++  static const String heatmapDemoHint =
++      'قيم محاكاة لأغراض استكشاف الواجهة فقط.';
++  static const String heatmapDemoBanner =
++      'بيانات محاكاة للعرض فقط — القيم غير حقيقية ولن تُحفظ في هذا المسح.';
++  static const String heatmapAutoUnavailable =
++      'تعذّرت قراءة الإشارة تلقائياً (تأكد من اتصال WiFi). بدّل إلى الإدخال اليدوي لإدخال القيمة بنفسك.';
++  static const String heatmapManualTitle = 'قوة الإشارة في هذه النقطة';
++
++  // ── تصنيف جودة RSSI ─────────────────────────────────────────
++  static const String rssiExcellent = 'ممتازة';
++  static const String rssiGood = 'جيدة';
++  static const String rssiFair = 'مقبولة';
++  static const String rssiWeak = 'ضعيفة';
++  static const String rssiVeryPoor = 'ضعيفة جداً';
++
++  // ── شاشة دعم المنصات وقيود iOS ──────────────────────────────
++  static const String platformLimitsTitle = 'دعم المنصات وقيود iOS';
++  static const String platformLimitsIntroTitle = 'لماذا يختلف السلوك بين المنصتين؟';
++  static const String platformLimitsIntro =
++      'نُفصح بوضوح عما يعمله التطبيق على كل منصة. Apple تقيّد واجهات الشبكة على iOS '
++      'بشكل جذري (لا مسح للشبكات المحيطة، لا قراءة RSSI، لا التقاط حزم) — بينما '
++      'نوفر بدائل آمنة أينما أمكن. الميزات الموسومة أدناه تعمل كما هي على Android.';
++  static const String platformLimitsLimitedSection = 'ميزات بقيود على iOS';
++  static const String platformLimitsFullSection = 'تعمل بالكامل على المنصتين';
++  static const String supportFull = 'كامل';
++  static const String supportPartial = 'جزئي';
++  static const String supportUnavailable = 'غير متاح';
++  static const String settingsPlatformLimits = 'دعم المنصات وقيود iOS';
++  static const String settingsPlatformLimitsHint =
++      'ما الذي يعمل على جهازك — ومَ لا يعمل ولماذا.';
+ }
+diff --git a/lib/core/services/app_lock_service.dart b/lib/core/services/app_lock_service.dart
+new file mode 100644
+index 0000000..13ccc4e
+--- /dev/null
++++ b/lib/core/services/app_lock_service.dart
+@@ -0,0 +1,65 @@
++import 'package:flutter/services.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++import 'package:local_auth/local_auth.dart';
++
++import '../localization/app_strings.dart';
++
++/// خدمة قفل التطبيق بالمصادقة الحيوية (بصمة/Face ID/رمز الجهاز).
++///
++/// تغلّف local_auth خلف واجهة آمنة:
++///  - أي استثناء من المنصة يُعاد كقيمة منطقية بدل انهيار الواجهة.
++///  - نسمح بالرجوع لرمز قفل الجهاز (biometricOnly: false) حتى لا
++///    يُحبس المستخدم خارج التطبيق عند فشل البصمة عدة مرات.
++///  - stickyAuth لإعادة المحاولة تلقائياً عند انقطاع النشاط أثناء
++///    عرض نافذة المصادقة (شائع على Android).
++class AppLockService {
++  AppLockService([LocalAuthentication? localAuth])
++      : _localAuth = localAuth ?? LocalAuthentication();
++
++  final LocalAuthentication _localAuth;
++
++  /// هل يستطيع هذا الجهاز تنفيذ المصادقة؟
++  ///
++  /// يكفي وجود قفل شاشة (رمز/نمط/بصمة)؛ لا نشترط البصمة وحدها
++  /// لأن الرجوع لرمز الجهاز مدعوم.
++  Future<bool> isAvailable() async {
++    try {
++      return await _localAuth.isDeviceSupported();
++    } on PlatformException {
++      return false;
++    } on MissingPluginException {
++      return false;
++    }
++  }
++
++  /// هل توجد بصمة/وجه مسجّلان؟ (للعرض فقط، ليس شرطاً للتفعيل).
++  Future<bool> hasBiometrics() async {
++    try {
++      return await _localAuth.canCheckBiometrics &&
++          (await _localAuth.getAvailableBiometrics()).isNotEmpty;
++    } on PlatformException {
++      return false;
++    } on MissingPluginException {
++      return false;
++    }
++  }
++
++  /// يعرض نافذة المصادقة ويعيد true عند النجاح.
++  Future<bool> authenticate() async {
++    try {
++      return await _localAuth.authenticate(
++        localizedReason: AppStrings.appLockReason,
++        options: const AuthenticationOptions(
++          stickyAuth: true,
++          biometricOnly: false,
++        ),
++      );
++    } on PlatformException {
++      return false;
++    } on MissingPluginException {
++      return false;
++    }
++  }
++}
++
++final appLockServiceProvider = Provider<AppLockService>((_) => AppLockService());
+diff --git a/lib/core/utils/rssi_utils.dart b/lib/core/utils/rssi_utils.dart
+new file mode 100644
+index 0000000..4a73022
+--- /dev/null
++++ b/lib/core/utils/rssi_utils.dart
+@@ -0,0 +1,44 @@
++/// أدوات قوة الإشارة (RSSI) — منطق خالص قابل للاختبار.
++///
++/// يُستخدم في الخريطة الحرارية لتصنيف جودة القراءات والتحقق
++/// من صحتها قبل اعتمادها.
++library;
++
++/// تصنيف جودة إشارة بوحدة dBm (معايير شائعة لشبكات WiFi).
++enum RssiQuality {
++  excellent,
++  good,
++  fair,
++  weak,
++  veryPoor,
++}
++
++abstract class RssiUtils {
++  /// الحدود المنطقية لقراءة RSSI صالحة من WiFi.
++  static const int minValid = -100;
++  static const int maxValid = -20;
++
++  /// هل القراءة داخل المدى المنطقي؟ (يستبعد 0 وINVALID_RSSI=-9999)
++  static bool isValidRssi(int rssi) =>
++      rssi >= minValid && rssi <= maxValid;
++
++  /// يحصر قيمة في المدى المعقول للعرض والرسم.
++  static int clampRssi(int rssi) => rssi.clamp(minValid + 5, -30);
++
++  /// يصنّف جودة الإشارة وفق العتبات المتعارف عليها.
++  static RssiQuality qualityOf(int rssi) {
++    if (rssi >= -50) return RssiQuality.excellent;
++    if (rssi >= -60) return RssiQuality.good;
++    if (rssi >= -70) return RssiQuality.fair;
++    if (rssi >= -80) return RssiQuality.weak;
++    return RssiQuality.veryPoor;
++  }
++
++  /// اللون التقريبي للجودة كقيمة مضاعف شفافية 0–1 للحرارة
++  /// (1 = ممتاز، 0 = ضعيف جداً) — يفيد في تدرجات الرسم.
++  static double heatOf(int rssi) {
++    final clamped = clampRssi(rssi);
++    // المدى الفعلي بعد الحصر: [-95, -30] → قيمة 0–1.
++    return ((clamped + 95) / 65).clamp(0.0, 1.0);
++  }
++}
+diff --git a/lib/features/heatmap/data/signal_sampler.dart b/lib/features/heatmap/data/signal_sampler.dart
+new file mode 100644
+index 0000000..ce2c945
+--- /dev/null
++++ b/lib/features/heatmap/data/signal_sampler.dart
+@@ -0,0 +1,52 @@
++import 'package:flutter/foundation.dart';
++import 'package:flutter/services.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++
++import '../../../core/constants/app_constants.dart';
++import '../../../core/utils/rssi_utils.dart';
++
++/// مصدر أخذ قراءة الإشارة للخريطة الحرارية.
++///
++///  - auto  : قراءة RSSI الحقيقية للشبكة المتصلة عبر القناة الأصلية
++///            (Android فقط — iOS لا يتيحها بدون واجهات خاصة).
++///  - manual: المستخدم يُدخل القيمة بنفسه (يعمل على كل المنصات).
++///  - demo  : قيم محاكاة لأغراض العرض فقط — لا تُحفظ ولا تُصدَّر،
++///            وتظهر ببانر واضح يفيد بأنها غير حقيقية.
++enum SignalSourceMode { auto, manual, demo }
++
++/// الوضع الافتراضي بحسب المنصة: Android قراءة تلقائية، iOS إدخال
++/// يدوي (لا توجد واجهة RSSI عامة على iOS).
++SignalSourceMode defaultModeForPlatform({required bool isIOS}) =>
++    isIOS ? SignalSourceMode.manual : SignalSourceMode.auto;
++
++/// يقرأ قوة إشارة الشبكة المتصلة حالياً (dBm) عبر الجسر الأصلي.
++///
++/// أي فشل (منصة غير مدعومة، WiFi مغلق، صلاحية مرفوضة) يُعاد null —
++/// لا نُخترع قيمة أبداً؛ الواجهة تعرض حينها تلميحاً للتبديل للإدخال
++/// اليدوي.
++class SignalSampler {
++  SignalSampler([this.channel = const MethodChannel(AppConstants.channelNetwork)]);
++
++  final MethodChannel channel;
++
++  Future<int?> readConnectedRssi() async {
++    int? raw;
++    try {
++      raw = await channel.invokeMethod<int>('getWifiRssi');
++    } on PlatformException {
++      return null;
++    } on MissingPluginException {
++      return null;
++    }
++
++    if (raw == null) return null;
++    // يستبعد 0 وINVALID_RSSI (-9999) وقيم القمم غير المنطقية.
++    if (!RssiUtils.isValidRssi(raw)) return null;
++    if (kDebugMode) {
++      debugPrint('[SignalSampler] RSSI الحقيقية: $raw dBm');
++    }
++    return raw;
++  }
++}
++
++final signalSamplerProvider = Provider<SignalSampler>((_) => SignalSampler());
+diff --git a/lib/features/heatmap/presentation/heatmap_page.dart b/lib/features/heatmap/presentation/heatmap_page.dart
+index 714d442..2488c5f 100644
+--- a/lib/features/heatmap/presentation/heatmap_page.dart
++++ b/lib/features/heatmap/presentation/heatmap_page.dart
+@@ -1,3 +1,5 @@
++import 'dart:io' show Platform;
++
+ import 'package:flutter/material.dart';
+ import 'package:flutter_riverpod/flutter_riverpod.dart';
+ 
+@@ -10,6 +12,8 @@ import '../../../core/presentation/widgets/heatmap_widget.dart';
+ import '../../../core/presentation/widgets/states.dart';
+ import '../../../core/theme/app_colors.dart';
+ import '../../../core/theme/app_spacing.dart';
++import '../../../core/utils/rssi_utils.dart';
++import '../data/signal_sampler.dart';
+ import '../../heatmap/data/survey_repository_impl.dart';
+ 
+ /// قائمة مسوحات المواقع المحفوظة + زر إنشاء مسح جديد.
+@@ -148,57 +152,203 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
+   List<SignalSample> _samples = const [];
+   bool _saving = false;
+ 
+-  void _addSample(Offset localPosition, Size size) {
++  /// مصدر قراءة الإشارة — الافتراضي: تلقائي على Android، يدوي على iOS.
++  SignalSourceMode _mode =
++      defaultModeForPlatform(isIOS: Platform.isIOS);
++
++  void _setMode(SignalSourceMode mode) {
++    if (mode == _mode) return;
++    setState(() => _mode = mode);
++  }
++
++  Future<void> _addSampleAt(Offset localPosition, Size size) async {
+     // موضع نسبي على الخريطة (0–1).
+     final x = (localPosition.dx / size.width).clamp(0.0, 1.0);
+     final y = (localPosition.dy / size.height).clamp(0.0, 1.0);
+ 
+-    // قوة إشارة تجريبية: أقرب للمركز أقوى (محاكاة تغطية نقطة وصول وسطية).
+-    // في النسخة النهائية تُقرأ RSSI الحقيقية من مسح WiFi الأصلي.
+-    final distance =
+-        (((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))) * 2;
+-    final rssi = (-42 - distance * 70).clamp(-95, -40).round();
++    switch (_mode) {
++      case SignalSourceMode.auto:
++        final rssi =
++            await ref.read(signalSamplerProvider).readConnectedRssi();
++        if (!mounted) return;
++        if (rssi == null) {
++          _hint(AppStrings.heatmapAutoUnavailable);
++          return;
++        }
++        _commit(rssi, x, y);
++      case SignalSourceMode.manual:
++        final rssi = await _askManualRssi();
++        if (rssi == null) return;
++        _commit(rssi, x, y);
++      case SignalSourceMode.demo:
++        // محاكاة معلَنة: أقرب للمركز أقوى. لأغراض العرض فقط.
++        final distance =
++            (((x - 0.5) * (x - 0.5) + (y - 0.5) * (y - 0.5))) * 2;
++        final rssi = (-42 - distance * 70).clamp(-95, -40).round();
++        _commit(rssi, x, y, persist: false);
++    }
++  }
++
++  void _commit(int rssi, double x, double y, {bool persist = true}) {
++    final sample = SignalSample(
++      rssi: rssi,
++      x: x,
++      y: y,
++      capturedAt: DateTime.now(),
++    );
++    setState(() => _samples = [..._samples, sample]);
++    // عينات الوضع التجريبي لا تُحفظ — قيم غير حقيقية.
++    if (persist) _persistSample(sample);
++  }
++
++  void _hint(String message) {
++    ScaffoldMessenger.of(context)
++      ..hideCurrentSnackBar()
++      ..showSnackBar(SnackBar(content: Text(message)));
++  }
+ 
+-    setState(() {
+-      _samples = [
+-        ..._samples,
+-        SignalSample(
+-          rssi: rssi,
+-          x: x,
+-          y: y,
+-          capturedAt: DateTime.now(),
++  /// حوار إدخال يدوي: منزلق dBm مع تصنيف الجودة لحظياً.
++  Future<int?> _askManualRssi() {
++    int value = -60;
++    return showDialog<int>(
++      context: context,
++      builder: (ctx) => StatefulBuilder(
++        builder: (ctx, setDialogState) => AlertDialog(
++          title: Text(AppStrings.heatmapManualTitle),
++          content: Column(
++            mainAxisSize: MainAxisSize.min,
++            children: [
++              Text(
++                '$value dBm',
++                style: ctx.textTheme.headlineSmall
++                    ?.copyWith(fontWeight: FontWeight.w800),
++              ),
++              Text(
++                _qualityLabel(RssiUtils.qualityOf(value)),
++                style: ctx.textTheme.bodySmall
++                    ?.copyWith(color: _qualityColor(RssiUtils.qualityOf(value))),
++              ),
++              Slider(
++                value: value.toDouble(),
++                min: -95,
++                max: -35,
++                divisions: 60,
++                label: '$value',
++                onChanged: (v) =>
++                    setDialogState(() => value = v.round()),
++              ),
++            ],
++          ),
++          actions: [
++            TextButton(
++              onPressed: () => Navigator.pop(ctx),
++              child: const Text(AppStrings.cancel),
++            ),
++            FilledButton(
++              onPressed: () => Navigator.pop(ctx, value),
++              child: const Text(AppStrings.add),
++            ),
++          ],
+         ),
+-      ];
+-    });
++      ),
++    );
+   }
+ 
++  String _qualityLabel(RssiQuality q) => switch (q) {
++        RssiQuality.excellent => AppStrings.rssiExcellent,
++        RssiQuality.good => AppStrings.rssiGood,
++        RssiQuality.fair => AppStrings.rssiFair,
++        RssiQuality.weak => AppStrings.rssiWeak,
++        RssiQuality.veryPoor => AppStrings.rssiVeryPoor,
++      };
++
++  Color _qualityColor(RssiQuality q) => switch (q) {
++        RssiQuality.excellent => AppColors.success,
++        RssiQuality.good => AppColors.accent,
++        RssiQuality.fair => AppColors.warning,
++        RssiQuality.weak => AppColors.error,
++        RssiQuality.veryPoor => AppColors.error,
++      };
++
+   Future<void> _persistSample(SignalSample sample) async {
+     await ref.read(surveyRepositoryProvider).addSample(widget.surveyId, sample);
+   }
+ 
+   @override
+   Widget build(BuildContext context) {
++    final isDemo = _mode == SignalSourceMode.demo;
+     return AppBackground(
+       child: Scaffold(
+         backgroundColor: Colors.transparent,
+         appBar: AppBar(
+           title: Text(widget.surveyName),
+           actions: [
+-            IconButton(
+-              tooltip: AppStrings.export,
+-              icon: const Icon(Icons.picture_as_pdf_rounded),
+-              onPressed: _exportPdf,
+-            ),
++            // التصدير متاح للبيانات الحقيقية فقط.
++            if (!isDemo)
++              IconButton(
++                tooltip: AppStrings.export,
++                icon: const Icon(Icons.picture_as_pdf_rounded),
++                onPressed: _exportPdf,
++              ),
+           ],
+         ),
+         body: SafeArea(
+           child: ListView(
+             padding: context.responsivePadding,
+             children: [
++              // ── اختيار مصدر القياس ──
++              Wrap(
++                spacing: AppSpacing.sm,
++                runSpacing: AppSpacing.sm,
++                children: [
++                  ChoiceChip(
++                    label: Text(AppStrings.heatmapModeAuto),
++                    selected: _mode == SignalSourceMode.auto,
++                    onSelected: (_) => _setMode(SignalSourceMode.auto),
++                  ),
++                  ChoiceChip(
++                    label: Text(AppStrings.heatmapModeManual),
++                    selected: _mode == SignalSourceMode.manual,
++                    onSelected: (_) => _setMode(SignalSourceMode.manual),
++                  ),
++                  ChoiceChip(
++                    label: Text(AppStrings.heatmapModeDemo),
++                    selected: isDemo,
++                    onSelected: (_) => _setMode(SignalSourceMode.demo),
++                  ),
++                ],
++              ),
++              const SizedBox(height: AppSpacing.sm),
+               Text(
+-                AppStrings.heatmapHint,
++                switch (_mode) {
++                  SignalSourceMode.auto => AppStrings.heatmapAutoHint,
++                  SignalSourceMode.manual => AppStrings.heatmapManualHint,
++                  SignalSourceMode.demo => AppStrings.heatmapDemoHint,
++                },
+                 style: context.textTheme.bodySmall,
+               ),
++
++              // ── بانر الوضع التجريبي (إفصاح صريح) ──
++              if (isDemo) ...[
++                const SizedBox(height: AppSpacing.md),
++                GlassCard(
++                  borderColor: AppColors.warning,
++                  child: Row(
++                    children: [
++                      const Icon(Icons.warning_amber_rounded,
++                          color: AppColors.warning),
++                      const SizedBox(width: AppSpacing.md),
++                      Expanded(
++                        child: Text(
++                          AppStrings.heatmapDemoBanner,
++                          style: context.textTheme.bodySmall
++                              ?.copyWith(color: AppColors.warning),
++                        ),
++                      ),
++                    ],
++                  ),
++                ),
++              ],
+               const SizedBox(height: AppSpacing.lg),
+               LayoutBuilder(
+                 builder: (context, constraints) {
+@@ -206,9 +356,8 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
+                   const height = 320.0;
+                   return GestureDetector(
+                     onTapDown: (details) {
+-                      _addSample(details.localPosition, Size(width, height));
+-                      final last = _samples.last;
+-                      _persistSample(last);
++                      _addSampleAt(
++                          details.localPosition, Size(width, height));
+                     },
+                     child: HeatmapWidget(
+                       samples: _samples,
+diff --git a/lib/features/settings/presentation/app_lock_gate.dart b/lib/features/settings/presentation/app_lock_gate.dart
+new file mode 100644
+index 0000000..440d607
+--- /dev/null
++++ b/lib/features/settings/presentation/app_lock_gate.dart
+@@ -0,0 +1,173 @@
++import 'dart:ui';
++
++import 'package:flutter/material.dart';
++import 'package:flutter_riverpod/flutter_riverpod.dart';
++
++import '../../../core/localization/app_strings.dart';
++import '../../../core/presentation/widgets/glass_card.dart';
++import '../../../core/services/app_lock_service.dart';
++import '../../../core/theme/app_colors.dart';
++import '../../../core/theme/app_spacing.dart';
++import '../data/settings_repository_impl.dart';
++import 'settings_providers.dart';
++
++/// بوابة قفل التطبيق — تغلّف المحتوى بالكامل وتظهر حاجزاً عند:
++///  - بدء التشغيل والقفل مفعّل من الإعدادات.
++///  - عودة التطبيق من الخلفية إلى المقدمة.
++///
++/// الخصوصية: المحتوى خلف الحاجز يُطمس بالكامل (BackdropFilter)
++/// فلا يظهر أي محتوى حساس في قائمة التطبيقات الأخيرة.
++///
++/// حارس المصادقة: أثناء انتظار نافذة البصمة قد تتغير دورة حياة
++/// التطبيق (paused→resumed على Android) — نتجاهل الأحداث حينها
++/// حتى لا يُقفل التطبيق مجدداً لحظة نجاح المصادقة.
++class AppLockGate extends ConsumerStatefulWidget {
++  const AppLockGate({super.key, required this.child});
++
++  final Widget child;
++
++  @override
++  ConsumerState<AppLockGate> createState() => _AppLockGateState();
++}
++
++class _AppLockGateState extends ConsumerState<AppLockGate>
++    with WidgetsBindingObserver {
++  bool _locked = false;
++  bool _authenticating = false;
++  bool _wasPaused = false;
++
++  @override
++  void initState() {
++    super.initState();
++    WidgetsBinding.instance.addObserver(this);
++    // بعد أول إطار: قفل إن كان مفعّلاً (الإعدادات تُقرأ من الذاكرة
++    // لأن SharedPreferences هُيّئت قبل runApp).
++    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeLockFirstRun());
++  }
++
++  @override
++  void dispose() {
++    WidgetsBinding.instance.removeObserver(this);
++    super.dispose();
++  }
++
++  @override
++  void didChangeAppLifecycleState(AppLifecycleState state) {
++    if (state == AppLifecycleState.paused ||
++        state == AppLifecycleState.hidden) {
++      _wasPaused = true;
++    } else if (state == AppLifecycleState.resumed && _wasPaused) {
++      _wasPaused = false;
++      // عودة حقيقية من الخلفية (وليست نافذة المصادقة) → أعد القفل.
++      if (!_authenticating) _lockIfEnabled();
++    }
++  }
++
++  Future<void> _maybeLockFirstRun() async {
++    if (!mounted) return;
++    _lockIfEnabled();
++
++    // محاولة فتح تلقائية مباشرة عند الإقلاع (تجربة أسرع).
++    if (_locked) {
++      await Future<void>.delayed(const Duration(milliseconds: 350));
++      if (mounted && _locked) await _tryUnlock();
++    }
++  }
++
++  void _lockIfEnabled() {
++    final enabled = ref.read(settingsProvider).appLockEnabled;
++    if (enabled && mounted && !_locked) {
++      setState(() => _locked = true);
++    } else if (enabled && !_locked) {
++      _locked = true;
++    }
++  }
++
++  Future<void> _tryUnlock() async {
++    if (_authenticating) return;
++    setState(() => _authenticating = true);
++    final ok = await ref.read(appLockServiceProvider).authenticate();
++    if (!mounted) return;
++    setState(() {
++      _authenticating = false;
++      if (ok) _locked = false;
++    });
++  }
++
++  @override
++  Widget build(BuildContext context) {
++    return Stack(
++      children: [
++        // المحتوى دائماً مبني (يحفظ حالة التنقل) — الحاجز فوقه.
++        widget.child,
++        if (_locked) _buildBarrier(),
++      ],
++    );
++  }
++
++  Widget _buildBarrier() {
++    return Positioned.fill(
++      child: ExcludeSemantics(
++        child: BackdropFilter(
++          filter: ImageFilter.blur(sigmaX: 40, sigmaY: 40),
++          child: ColoredBox(
++            color: Colors.black.withValues(alpha: 0.55),
++            child: Center(
++              child: SingleChildScrollView(
++                padding: const EdgeInsets.all(AppSpacing.xl),
++                child: GlassCard(
++                  child: Column(
++                    mainAxisSize: MainAxisSize.min,
++                    children: [
++                      Container(
++                        padding: const EdgeInsets.all(AppSpacing.lg),
++                        decoration: const BoxDecoration(
++                          color: AppColors.primary,
++                          shape: BoxShape.circle,
++                        ),
++                        child: const Icon(Icons.lock_rounded,
++                            color: Colors.white, size: 42),
++                      ),
++                      const SizedBox(height: AppSpacing.lg),
++                      Text(
++                        AppStrings.appLockTitle,
++                        style: Theme.of(context)
++                            .textTheme
++                            .titleLarge
++                            ?.copyWith(
++                              fontWeight: FontWeight.w800,
++                              color: Colors.white,
++                            ),
++                      ),
++                      const SizedBox(height: AppSpacing.sm),
++                      Text(
++                        AppStrings.appLockHint,
++                        textAlign: TextAlign.center,
++                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
++                              color: Colors.white70,
++                            ),
++                      ),
++                      const SizedBox(height: AppSpacing.lg),
++                      FilledButton.icon(
++                        onPressed: _authenticating ? null : _tryUnlock,
++                        icon: _authenticating
++                            ? const SizedBox(
++                                width: 18,
++                                height: 18,
++                                child: CircularProgressIndicator(
++                                    strokeWidth: 2, color: Colors.white),
++                              )
++                            : const Icon(Icons.fingerprint_rounded),
++                        label: Text(AppStrings.appLockUnlock),
++                      ),
++                    ],
++                  ),
++                ),
++              ),
++            ),
++          ),
++        ),
++      ),
++    );
++  }
++}
+diff --git a/lib/features/settings/presentation/platform_limits_page.dart b/lib/features/settings/presentation/platform_limits_page.dart
+new file mode 100644
+index 0000000..ec9ec8b
+--- /dev/null
++++ b/lib/features/settings/presentation/platform_limits_page.dart
+@@ -0,0 +1,243 @@
++import 'dart:io' show Platform;
++
++import 'package:flutter/material.dart';
++
++import '../../../core/domain/entities/platform_capabilities.dart';
++import '../../../core/extensions/context_ext.dart';
++import '../../../core/localization/app_strings.dart';
++import '../../../core/presentation/widgets/app_background.dart';
++import '../../../core/presentation/widgets/glass_card.dart';
++import '../../../core/theme/app_colors.dart';
++import '../../../core/theme/app_spacing.dart';
++
++/// شاشة "دعم المنصات وقيود iOS".
++///
++/// خريطة صادقة لما يعمل بالكامل وما يتدهور وما هو مستحيل على كل
++/// منصة — ليعرف المستخدم قبل الاستخدام سبب اختلاف السلوك بين
++/// Android وiOS (قيود Apple على واجهات الشبكة).
++class PlatformLimitsPage extends StatelessWidget {
++  const PlatformLimitsPage({super.key});
++
++  bool get _isIOS => Platform.isIOS;
++
++  @override
++  Widget build(BuildContext context) {
++    return AppBackground(
++      child: Scaffold(
++        backgroundColor: Colors.transparent,
++        appBar: AppBar(title: const Text(AppStrings.platformLimitsTitle)),
++        body: SafeArea(
++          child: ListView(
++            padding: context.responsivePadding.copyWith(bottom: 100),
++            children: [
++              // ── شرح مبدئي ──
++              GlassCard(
++                child: Column(
++                  crossAxisAlignment: CrossAxisAlignment.start,
++                  children: [
++                    Row(
++                      children: [
++                        const Icon(Icons.balance_rounded,
++                            color: AppColors.accent),
++                        const SizedBox(width: AppSpacing.md),
++                        Expanded(
++                          child: Text(
++                            AppStrings.platformLimitsIntroTitle,
++                            style: context.textTheme.titleSmall,
++                          ),
++                        ),
++                      ],
++                    ),
++                    const SizedBox(height: AppSpacing.sm),
++                    Text(
++                      AppStrings.platformLimitsIntro,
++                      style: context.textTheme.bodySmall,
++                    ),
++                  ],
++                ),
++              ),
++              const SizedBox(height: AppSpacing.md),
++
++              // ── مفتاح الألوان ──
++              GlassCard(
++                child: Row(
++                  mainAxisAlignment: MainAxisAlignment.spaceAround,
++                  children: [
++                    _Legend(
++                        color: AppColors.success,
++                        label: AppStrings.supportFull),
++                    _Legend(
++                        color: AppColors.warning,
++                        label: AppStrings.supportPartial),
++                    _Legend(
++                        color: AppColors.error,
++                        label: AppStrings.supportUnavailable),
++                  ],
++                ),
++              ),
++              const SizedBox(height: AppSpacing.lg),
++
++              // ── القدرات: المقيّدة أولاً ──
++              Text(
++                AppStrings.platformLimitsLimitedSection,
++                style: context.textTheme.titleSmall
++                    ?.copyWith(color: AppColors.warning),
++              ),
++              const SizedBox(height: AppSpacing.sm),
++              ..._capabilities(
++                context,
++                PlatformCapabilities.all
++                    .where((c) => c.isLimitedOnIos)
++                    .toList(growable: false),
++              ),
++              const SizedBox(height: AppSpacing.lg),
++              Text(
++                AppStrings.platformLimitsFullSection,
++                style: context.textTheme.titleSmall
++                    ?.copyWith(color: AppColors.success),
++              ),
++              const SizedBox(height: AppSpacing.sm),
++              ..._capabilities(
++                context,
++                PlatformCapabilities.all
++                    .where((c) => !c.isLimitedOnIos)
++                    .toList(growable: false),
++              ),
++            ],
++          ),
++        ),
++      ),
++    );
++  }
++
++  List<Widget> _capabilities(BuildContext context, List<PlatformCapability> items) {
++    return [
++      for (final c in items) ...[
++        GlassCard(
++          child: Column(
++            crossAxisAlignment: CrossAxisAlignment.start,
++            children: [
++              Text(c.title, style: context.textTheme.titleSmall),
++              const SizedBox(height: AppSpacing.xs),
++              Text(c.description, style: context.textTheme.bodySmall),
++              const SizedBox(height: AppSpacing.md),
++              Row(
++                children: [
++                  _SupportBadge(
++                    label: 'Android',
++                    level: c.android,
++                    highlighted: !_isIOS,
++                  ),
++                  const SizedBox(width: AppSpacing.sm),
++                  _SupportBadge(
++                    label: 'iOS',
++                    level: c.ios,
++                    highlighted: _isIOS,
++                  ),
++                ],
++              ),
++              if (c.iosNote != null && _isIOS) ...[
++                const SizedBox(height: AppSpacing.md),
++                Row(
++                  crossAxisAlignment: CrossAxisAlignment.start,
++                  children: [
++                    const Icon(Icons.info_outline_rounded,
++                        size: 16, color: AppColors.accent),
++                    const SizedBox(width: AppSpacing.sm),
++                    Expanded(
++                      child: Text(
++                        c.iosNote!,
++                        style: context.textTheme.labelSmall
++                            ?.copyWith(color: AppColors.darkTextSecondary),
++                      ),
++                    ),
++                  ],
++                ),
++              ],
++            ],
++          ),
++        ),
++        const SizedBox(height: AppSpacing.sm),
++      ],
++    ];
++  }
++}
++
++class _Legend extends StatelessWidget {
++  const _Legend({required this.color, required this.label});
++  final Color color;
++  final String label;
++
++  @override
++  Widget build(BuildContext context) {
++    return Row(
++      mainAxisSize: MainAxisSize.min,
++      children: [
++        Container(
++          width: 10,
++          height: 10,
++          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
++        ),
++        const SizedBox(width: 6),
++        Text(label, style: context.textTheme.labelSmall),
++      ],
++    );
++  }
++}
++
++class _SupportBadge extends StatelessWidget {
++  const _SupportBadge({
++    required this.label,
++    required this.level,
++    required this.highlighted,
++  });
++
++  final String label;
++  final SupportLevel level;
++  final bool highlighted;
++
++  Color get _color => switch (level) {
++        SupportLevel.full => AppColors.success,
++        SupportLevel.partial => AppColors.warning,
++        SupportLevel.unavailable => AppColors.error,
++      };
++
++  IconData get _icon => switch (level) {
++        SupportLevel.full => Icons.check_circle_rounded,
++        SupportLevel.partial => Icons.remove_circle_rounded,
++        SupportLevel.unavailable => Icons.cancel_rounded,
++      };
++
++  String get _text => switch (level) {
++        SupportLevel.full => AppStrings.supportFull,
++        SupportLevel.partial => AppStrings.supportPartial,
++        SupportLevel.unavailable => AppStrings.supportUnavailable,
++      };
++
++  @override
++  Widget build(BuildContext context) {
++    return Container(
++      padding: const EdgeInsets.symmetric(
++          horizontal: AppSpacing.sm, vertical: 4),
++      decoration: BoxDecoration(
++        color: _color.withOpacity(0.12),
++        borderRadius: BorderRadius.circular(AppSpacing.radiusFull),
++        border: Border.all(
++          color: highlighted ? _color : _color.withOpacity(0.4),
++          width: highlighted ? 1.5 : 1,
++        ),
++      ),
++      child: Row(
++        mainAxisSize: MainAxisSize.min,
++        children: [
++          Icon(_icon, size: 14, color: _color),
++          const SizedBox(width: 4),
++          Text(
++            '$label · $_text',
++            style: context.textTheme.labelSmall?.copyWith(color: _color),
++          ),
++        ],
++      ),
++    );
++  }
++}
+diff --git a/lib/features/settings/presentation/settings_page.dart b/lib/features/settings/presentation/settings_page.dart
+index ec14e20..ef1140c 100644
+--- a/lib/features/settings/presentation/settings_page.dart
++++ b/lib/features/settings/presentation/settings_page.dart
+@@ -68,7 +68,11 @@ class SettingsPage extends ConsumerWidget {
+                 children: [
+                   SwitchListTile(
+                     value: settings.appLockEnabled,
+-                    onChanged: notifier.setAppLock,
++                    onChanged: (enabled) => _onAppLockToggle(
++                      context: context,
++                      ref: ref,
++                      enabled: enabled,
++                    ),
+                     title: const Text(AppStrings.settingsAppLock),
+                     secondary: const Icon(Icons.fingerprint_rounded,
+                         color: AppColors.accent),
+@@ -90,6 +94,19 @@ class SettingsPage extends ConsumerWidget {
+                           : AppStrings.rootNotAvailable,
+                     ),
+                   ),
++                  const Divider(height: 1),
++                  ListTile(
++                    leading: const Icon(Icons.balance_rounded,
++                        color: AppColors.accent),
++                    title: const Text(AppStrings.settingsPlatformLimits),
++                    subtitle: Text(AppStrings.settingsPlatformLimitsHint),
++                    trailing: const Icon(Icons.chevron_left_rounded),
++                    onTap: () => Navigator.of(context).push(
++                      MaterialPageRoute<void>(
++                        builder: (_) => const PlatformLimitsPage(),
++                      ),
++                    ),
++                  ),
+                 ],
+               ),
+             ),
+@@ -159,6 +176,33 @@ class SettingsPage extends ConsumerWidget {
+     );
+   }
+ 
++  /// تفعيل القفل: نتحقق أولاً من قدرة الجهاز على المصادقة (وجود
++  /// قفل شاشة) — وإلا نرفض التفعيل مع شرح السبب بدل تعطيل مستخدم
++  /// يفعّل خياراً لن يعمل.
++  Future<void> _onAppLockToggle({
++    required BuildContext context,
++    required WidgetRef ref,
++    required bool enabled,
++  }) async {
++    if (!enabled) {
++      await ref.read(settingsProvider.notifier).setAppLock(false);
++      return;
++    }
++
++    final available = await ref.read(appLockServiceProvider).isAvailable();
++    if (!available) {
++      if (context.mounted) {
++        ScaffoldMessenger.of(context)
++          ..hideCurrentSnackBar()
++          ..showSnackBar(
++            const SnackBar(content: Text(AppStrings.appLockUnavailable)),
++          );
++      }
++      return;
++    }
++    await ref.read(settingsProvider.notifier).setAppLock(true);
++  }
++
+   Future<void> _wigleDialog(BuildContext context, WidgetRef ref) async {
+     final controller = TextEditingController(
+       text: ref.read(settingsProvider).wigleApiToken ?? '',
+diff --git a/pubspec.yaml b/pubspec.yaml
+index 662dbef..61cf4be 100644
+--- a/pubspec.yaml
++++ b/pubspec.yaml
+@@ -75,6 +75,9 @@ dependencies:
+   package_info_plus: ^8.0.0
+   permission_handler: ^11.2.0
+ 
++  # ── الأمان: قفل التطبيق بالبصمة/Face ID ──────────────────────
++  local_auth: 2.2.0
++
+   # ── واجهة المستخدم ──────────────────────────────────────────
+   google_fonts: ^6.2.0
+   shimmer: ^3.0.0
+diff --git a/test/heatmap_sources_test.dart b/test/heatmap_sources_test.dart
+new file mode 100644
+index 0000000..d3ca87c
+--- /dev/null
++++ b/test/heatmap_sources_test.dart
+@@ -0,0 +1,24 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:netcontrol/features/heatmap/data/signal_sampler.dart';
++
++void main() {
++  group('defaultModeForPlatform', () {
++    test('Android: القياس التلقائي افتراضياً', () {
++      expect(defaultModeForPlatform(isIOS: false),
++          SignalSourceMode.auto);
++    });
++
++    test('iOS: الإدخال اليدوي افتراضياً (لا واجهة RSSI عامة)', () {
++      expect(defaultModeForPlatform(isIOS: true),
++          SignalSourceMode.manual);
++    });
++  });
++
++  group('SignalSourceMode', () {
++    test('الأنماط الثلاثة موجودة', () {
++      expect(SignalSourceMode.values.length, 3);
++      expect(SignalSourceMode.values,
++          containsAll([SignalSourceMode.auto, SignalSourceMode.manual, SignalSourceMode.demo]));
++    });
++  });
++}
+diff --git a/test/platform_capabilities_test.dart b/test/platform_capabilities_test.dart
+new file mode 100644
+index 0000000..19322c4
+--- /dev/null
++++ b/test/platform_capabilities_test.dart
+@@ -0,0 +1,48 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:netcontrol/core/domain/entities/platform_capabilities.dart';
++
++void main() {
++  group('PlatformCapabilities كتالوج القدرات', () {
++    test('لا يحوي عناصر فارغة', () {
++      for (final c in PlatformCapabilities.all) {
++        expect(c.title.trim().isNotEmpty, isTrue,
++            reason: 'عنوان فارغ في إحدى القدرات');
++        expect(c.description.trim().isNotEmpty, isTrue,
++            reason: 'وصف فارغ لِـ ${c.title}');
++      }
++    });
++
++    test('كل قدرة تحدد مستوى Android وiOS', () {
++      // كل قيم التعداد مستخدمة أصلاً؛ يكفي التحقق من النوع والعدد.
++      expect(
++        PlatformCapabilities.all
++            .every((c) => c.android is SupportLevel && c.ios is SupportLevel),
++        isTrue,
++      );
++    });
++
++    test('القدرات المقيّدة على iOS تذكر سبب القيد', () {
++      for (final c in PlatformCapabilities.all.where((c) => c.isLimitedOnIos)) {
++        expect(c.iosNote, isNotNull,
++            reason: '${c.title} مقيّدة على iOS دون توضيح السبب');
++        expect(c.iosNote!.trim().isNotEmpty, isTrue);
++      }
++    });
++
++    test('levelFor ترجع مستوى المنصة الصحيح', () {
++      const cap = PlatformCapabilities.all.first;
++      expect(PlatformCapabilities.levelFor(cap, isIOS: false), cap.android);
++      expect(PlatformCapabilities.levelFor(cap, isIOS: true), cap.ios);
++    });
++
++    test('sortedForDisplay تضع المقيّد أولاً دون فقدان عناصر', () {
++      final sorted = PlatformCapabilities.sortedForDisplay;
++      expect(sorted.length, PlatformCapabilities.all.length);
++      final firstLimitedIndex = sorted.indexWhere((c) => c.isLimitedOnIos);
++      final lastFullIndex =
++          sorted.lastIndexWhere((c) => !c.isLimitedOnIos);
++      expect(firstLimitedIndex, greaterThanOrEqualTo(0));
++      expect(lastFullIndex, greaterThan(firstLimitedIndex));
++    });
++  });
++}
+diff --git a/test/rssi_utils_test.dart b/test/rssi_utils_test.dart
+new file mode 100644
+index 0000000..0f7aeb4
+--- /dev/null
++++ b/test/rssi_utils_test.dart
+@@ -0,0 +1,53 @@
++import 'package:flutter_test/flutter_test.dart';
++import 'package:netcontrol/core/utils/rssi_utils.dart';
++
++void main() {
++  group('RssiUtils.isValidRssi', () {
++    test('يقبل القيم المنطقية', () {
++      expect(RssiUtils.isValidRssi(-42), isTrue);
++      expect(RssiUtils.isValidRssi(-67), isTrue);
++      expect(RssiUtils.isValidRssi(-95), isTrue);
++    });
++
++    test('يرفض القيم غير المنطقية (0 وINVALID وقيم القمم)', () {
++      expect(RssiUtils.isValidRssi(0), isFalse);
++      expect(RssiUtils.isValidRssi(-9999), isFalse); // WifiInfo.INVALID_RSSI
++      expect(RssiUtils.isValidRssi(-101), isFalse);
++      expect(RssiUtils.isValidRssi(-19), isFalse);
++      expect(RssiUtils.isValidRssi(30), isFalse);
++    });
++  });
++
++  group('RssiUtils.clampRssi', () {
++    test('يحصر داخل المدى المعروض', () {
++      expect(RssiUtils.clampRssi(-120), -95);
++      expect(RssiUtils.clampRssi(-5), -30);
++      expect(RssiUtils.clampRssi(-60), -60);
++    });
++  });
++
++  group('RssiUtils.qualityOf', () {
++    test('حدود التصنيف صحيحة', () {
++      expect(RssiUtils.qualityOf(-40), RssiQuality.excellent);
++      expect(RssiUtils.qualityOf(-50), RssiQuality.excellent);
++      expect(RssiUtils.qualityOf(-51), RssiQuality.good);
++      expect(RssiUtils.qualityOf(-60), RssiQuality.good);
++      expect(RssiUtils.qualityOf(-61), RssiQuality.fair);
++      expect(RssiUtils.qualityOf(-70), RssiQuality.fair);
++      expect(RssiUtils.qualityOf(-71), RssiQuality.weak);
++      expect(RssiUtils.qualityOf(-80), RssiQuality.weak);
++      expect(RssiUtils.qualityOf(-81), RssiQuality.veryPoor);
++      expect(RssiUtils.qualityOf(-95), RssiQuality.veryPoor);
++    });
++  });
++
++  group('RssiUtils.heatOf', () {
++    test('قيمة الحرارة بين 0 و1 ومتزايدة', () {
++      final weak = RssiUtils.heatOf(-90);
++      final strong = RssiUtils.heatOf(-45);
++      expect(weak, inInclusiveRange(0, 1));
++      expect(strong, inInclusiveRange(0, 1));
++      expect(strong, greaterThan(weak));
++    });
++  });
++}
