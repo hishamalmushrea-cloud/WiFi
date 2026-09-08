@@ -38,14 +38,20 @@ class NetControlApp extends StatelessWidget {
       builder: (context, child) {
         // نوسّط المحتوى ونحدّد أقصى عرض على الشاشات الكبيرة
         // (ديسكتوب/تابلت أفقي) حسب قاعدة التصميم المتجاوب.
+        //
+        // AppLockGate فوق الـ Navigator نفسه (لا داخل مسار) حتى يغطي
+        // الحاجز كل الشاشات والحوارات، ويُبقى المحتوى مبنيًّا خلفه
+        // فيُحفظ وضع التنقل ولا يظهر أي محتوى حساس في multitasking.
         return Directionality(
           textDirection: TextDirection.rtl,
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(
-                maxWidth: AppConstants.maxContentWidth,
+          child: AppLockGate(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  maxWidth: AppConstants.maxContentWidth,
+                ),
+                child: child ?? const SizedBox.shrink(),
               ),
-              child: child ?? const SizedBox.shrink(),
             ),
           ),
         );
