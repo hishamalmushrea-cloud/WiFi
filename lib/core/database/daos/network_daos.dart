@@ -161,20 +161,9 @@ class AccessPointDao extends DatabaseAccessor<AppDatabase>
     if (existing == null) {
       await into(accessPoints).insert(ap);
     } else {
-      final updated = existing.copyWith(
-        ssid: ap.ssid.valueIfPresent,
-        channel: ap.channel.valueIfPresent,
-        frequency: ap.frequency.valueIfPresent,
-        rssi: ap.rssi.valueIfPresent,
-        security: ap.security.valueIfPresent,
-        capabilities: ap.capabilities.valueIfPresent,
-        vendor: ap.vendor.valueIfPresent,
-        width: ap.width.valueIfPresent,
-        band: ap.band.valueIfPresent,
-        lastSeen: ap.lastSeen.valueIfPresent,
-        isHidden: ap.isHidden.valueIfPresent,
-      );
-      await update(accessPoints).replace(updated);
+      // يحدّث فقط الحقول الـ Present الواردة في المسحة، دون مسح بقية البيانات.
+      await (update(accessPoints)..where((t) => t.bssid.equals(bssid)))
+          .write(ap);
     }
   }
 

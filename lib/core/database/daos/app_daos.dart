@@ -45,21 +45,8 @@ class DeviceDao extends DatabaseAccessor<AppDatabase>
       return into(devices).insert(device);
     }
     // نُبقي الحقول التي لم ترِد في الدفعة (Absent) على حالها:
-    // copyWith يستبدل القيم المُمرّرة فقط، فلا تُمسح بيانات قديمة.
-    final updated = existing.copyWith(
-      ip: device.ip.valueIfPresent,
-      name: device.name.valueIfPresent,
-      vendor: device.vendor.valueIfPresent,
-      os: device.os.valueIfPresent,
-      deviceType: device.deviceType.valueIfPresent,
-      fingerprint: device.fingerprint.valueIfPresent,
-      hostname: device.hostname.valueIfPresent,
-      connectionType: device.connectionType.valueIfPresent,
-      signalStrength: device.signalStrength.valueIfPresent,
-      throughput: device.throughput.valueIfPresent,
-      lastSeen: device.lastSeen.valueIfPresent,
-    );
-    await update(devices).replace(updated);
+    // write عبر companion يحدّث فقط الحقول الـ Present في الصف القائم.
+    await (update(devices)..where((t) => t.mac.equals(mac))).write(device);
     return existing.id;
   }
 

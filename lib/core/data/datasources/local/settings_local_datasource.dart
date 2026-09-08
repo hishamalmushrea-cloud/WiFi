@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../constants/app_constants.dart';
-import '../../domain/entities/app_settings.dart';
+import '../../../domain/entities/app_settings.dart';
 
 /// مصدر الإعدادات المحلي عبر SharedPreferences.
 ///

@@ -171,7 +171,7 @@ class NetworkScannerRepositoryImpl implements NetworkScannerRepository {
         port,
         timeout: const Duration(milliseconds: 1200),
       );
-      await socket.destroy();
+      socket.destroy();
       return PortState.open;
     } on SocketException {
       return PortState.closed;

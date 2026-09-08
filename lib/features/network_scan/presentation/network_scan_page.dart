@@ -5,7 +5,7 @@ import '../../../core/domain/entities/device.dart';
 import '../../../core/extensions/context_ext.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/presentation/widgets/app_background.dart';
-import '../../../core/presentation/widgets/app_progress_bar.dart';
+import '../../../core/presentation/widgets/progress_widgets.dart';
 import '../../../core/presentation/widgets/common_ui.dart';
 import '../../../core/presentation/widgets/glass_card.dart';
 import '../../../core/presentation/widgets/modern_device_card.dart';

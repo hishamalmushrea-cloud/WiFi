@@ -62,38 +62,28 @@ class ServiceDiscovery {
           await discovery.ready;
 
           discovery.eventStream?.listen((event) {
-            if (event.type == BonsoirDiscoveryEventType.discoveryServiceFound) {
-              final service = event.service;
-              if (service is ResolvedBonsoirService) {
-                final key = '${service.name}:${service.host}:${service.port}';
-                found[key] = DiscoveredService(
-                  name: service.name,
-                  type: type,
-                  host: service.host,
-                  ip: service.ip,
-                  port: service.port,
-                  attributes: Map<String, String>.from(service.attributes ?? {}),
-                );
-              } else {
-                // خدمة غير محلولة بعد — نطلب حلّها للحصول على IP.
-                service.resolve(service);
-              }
-            } else if (event.type ==
-                BonsoirDiscoveryEventType.discoveryServiceResolved) {
-              final service = event.service;
-              if (service is ResolvedBonsoirService) {
-                final key = '${service.name}:${service.host}:${service.port}';
-                found[key] = DiscoveredService(
-                  name: service.name,
-                  type: type,
-                  host: service.host,
-                  ip: service.ip,
-                  port: service.port,
-                  attributes:
-                      Map<String, String>.from(service.attributes ?? {}),
-                );
-              }
+            final isFoundOrResolved =
+                event.type == BonsoirDiscoveryEventType.discoveryServiceFound ||
+                    event.type ==
+                        BonsoirDiscoveryEventType.discoveryServiceResolved;
+            if (!isFoundOrResolved) return;
+            final service = event.service;
+            if (service == null) return;
+            if (service is! ResolvedBonsoirService) {
+              // خدمة غير محلولة بعد — نطلب حلّها للحصول على المضيف.
+              service.resolve(discovery.serviceResolver);
+              return;
             }
+            // Bonsoir 5.x يوفّر اسم المضيف (host) لا عمود IP منفصلاً.
+            final key = '${service.name}:${service.host}:${service.port}';
+            found[key] = DiscoveredService(
+              name: service.name,
+              type: type,
+              host: service.host,
+              ip: service.host,
+              port: service.port,
+              attributes: Map<String, String>.from(service.attributes),
+            );
           });
           await discovery.start();
         } catch (e) {

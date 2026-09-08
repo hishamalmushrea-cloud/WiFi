@@ -70,7 +70,7 @@ class NetworkToolsRepositoryImpl implements NetworkToolsRepository {
         final socket = await Socket.connect(host, port,
             timeout: const Duration(seconds: 2));
         sw.stop();
-        await socket.destroy();
+        socket.destroy();
         return sw.elapsedMilliseconds.toDouble();
       } catch (_) {}
     }
@@ -283,7 +283,7 @@ class NetworkToolsRepositoryImpl implements NetworkToolsRepository {
         timeout: const Duration(seconds: 8),
       );
       final cert = secureSocket.peerCertificate;
-      await secureSocket.destroy();
+      secureSocket.destroy();
 
       if (cert == null) {
         return SslCertificateInfo(host: host, isSelfSigned: true);
