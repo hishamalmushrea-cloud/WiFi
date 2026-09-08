@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/errors/result.dart';
 import '../../../core/domain/entities/device.dart';
 import '../../../core/domain/entities/network_info.dart';
 import '../../../core/domain/repositories/network_scanner_repository.dart';
@@ -87,13 +88,14 @@ class NetworkScanNotifier extends StateNotifier<ScanState> {
       },
     );
 
-    final devices = await scanResult.when(
-      onSuccess: (found) async {
+    late final List<Device> devices;
+    switch (scanResult) {
+      case Success(:final data):
         // إثراء: اكتشاف الخدمات والبصمة.
         state = state.copyWith(phase: ScanPhase.enriching);
         final services = await _discovery.discoverAll();
         final enriched = <Device>[];
-        for (final device in found) {
+        for (final device in data) {
           final type = DeviceFingerprinter.inferType(
             vendor: device.vendor,
             hostname: device.hostname,
@@ -103,16 +105,14 @@ class NetworkScanNotifier extends StateNotifier<ScanState> {
           );
           enriched.add(device.copyWith(type: type));
         }
-        return enriched;
-      },
-      onFailure: (failure) {
+        devices = enriched;
+      case FailureResult(:final failure):
         state = state.copyWith(
           phase: ScanPhase.error,
           errorMessage: failure.message,
         );
-        return <Device>[];
-      },
-    );
+        devices = const <Device>[];
+    }
 
     if (devices.isEmpty && state.phase == ScanPhase.error) return;
 

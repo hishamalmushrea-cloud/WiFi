@@ -152,7 +152,7 @@ class ProtocolAnalyzerScreen extends StatelessWidget {
       ('mDNS/Bonjour', 12, AppColors.secondary, Icons.cast_rounded),
       ('DHCP', 6, AppColors.warning, Icons.settings_ethernet_rounded),
       ('ARP', 15, AppColors.info, Icons.hub_rounded),
-      ('ICMP/Ping', 4, AppColors.darkTextSecondary, Icons.ping),
+      ('ICMP/Ping', 4, AppColors.darkTextSecondary, Icons.network_ping),
       (AppStrings.protocolHttpExposed, 3, AppColors.error, Icons.lock_open_rounded),
     ];
 

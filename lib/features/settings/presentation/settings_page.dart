@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/domain/entities/app_settings.dart';
 import '../../../core/domain/repositories/settings_repository.dart';
 import '../../../core/extensions/context_ext.dart';
 import '../../../core/localization/app_strings.dart';

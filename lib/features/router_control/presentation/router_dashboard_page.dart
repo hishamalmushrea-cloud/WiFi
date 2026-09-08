@@ -9,6 +9,7 @@ import '../../../core/presentation/widgets/glass_card.dart';
 import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../data/router_repository_impl.dart';
 import 'router_providers.dart';
 
 /// لوحة تحكم الراوتر بعد الاتصال: إحصائيات، عملاء، إعدادات واي فاي،
@@ -48,7 +49,7 @@ class RouterDashboardPage extends ConsumerWidget {
                 Tab(icon: Icon(Icons.dashboard_rounded), text: AppStrings.tabOverview),
                 Tab(icon: Icon(Icons.people_alt_rounded), text: AppStrings.tabClients),
                 Tab(icon: Icon(Icons.wifi_rounded), text: AppStrings.tabWifi),
-                Tab(icon: Icon(Icons.guest_rounded) , text: AppStrings.tabGuests),
+                Tab(icon: Icon(Icons.person_outline_rounded) , text: AppStrings.tabGuests),
                 Tab(icon: Icon(Icons.alt_route_rounded), text: AppStrings.tabPorts),
                 Tab(icon: Icon(Icons.filter_alt_rounded), text: AppStrings.tabMacFilter),
               ],
@@ -219,8 +220,10 @@ class _ClientsTab extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(c.name.isEmpty ? c.mac : c.name,
-                              style: context.textTheme.titleSmall),
+                          Text(
+                            c.name?.isNotEmpty == true ? c.name! : c.mac,
+                            style: context.textTheme.titleSmall,
+                          ),
                           Text('${c.ip} • ${c.mac}',
                               style: context.textTheme.labelSmall),
                         ],
@@ -366,7 +369,7 @@ class _GuestNetworkTabState extends ConsumerState<_GuestNetworkTab> {
                 value: _enabled,
                 onChanged: (v) => setState(() => _enabled = v),
                 title: const Text(AppStrings.guestEnable),
-                secondary: const Icon(Icons.guest_rounded,
+                secondary: const Icon(Icons.person_outline_rounded,
                     color: AppColors.accent),
               ),
               const Divider(height: 1),

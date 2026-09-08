@@ -63,9 +63,8 @@ class ChannelGraph extends StatelessWidget {
           barTouchData: BarTouchData(
             enabled: true,
             touchTooltipData: BarTouchTooltipData(
-              // خلفية التلميح داكنة.
-              // ignore: deprecated_member_use
-              tooltipBgColor: AppColors.darkSurfaceElevated,
+              // خلفية التلميح داكنة (fl_chart 0.67: دالة براميتر واحد).
+              getTooltipColor: (group) => AppColors.darkSurfaceElevated,
               getTooltipItem: (groupIndex, group, rodIndex, rod) {
                 final ap = accessPoints[
                     groupIndex.clamp(0, accessPoints.length - 1)];

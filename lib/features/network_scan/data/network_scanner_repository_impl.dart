@@ -11,6 +11,7 @@ import '../../../core/domain/entities/network_info.dart';
 import '../../../core/domain/entities/network_tools.dart';
 import '../../../core/domain/entities/vulnerability.dart';
 import '../../../core/domain/repositories/network_scanner_repository.dart';
+import '../../../core/errors/exceptions.dart';
 import '../../../core/errors/result.dart';
 import '../../../core/network/network_info_service.dart';
 import '../../../core/utils/app_logger.dart';
