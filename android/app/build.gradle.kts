@@ -45,6 +45,21 @@ flutter {
     source = "../.."
 }
 
+// Flutter 3.24.5 + AGP 8.3: لا تتفعّل أحياناً نسخة插件 التي تنقل APK إلى
+// build/app/outputs/flutter-apk/ التي يبحث عنها الأداة (flutter/flutter#174620).
+// نزامن الملف صراحةً بعد اكتمال assembleRelease:
+tasks.named("assembleRelease") {
+    doLast {
+        val from = layout.buildDirectory
+            .file("outputs/apk/release/app-release.apk").get().asFile
+        val toDir = file("$rootDir/../build/app/outputs/flutter-apk")
+        toDir.mkdirs()
+        val to = File(toDir, "app-release.apk")
+        from.copyTo(to, overwrite = true)
+        println("[NetControl] APK مُزامَن إلى flutter-apk (${to.length()} بايت)")
+    }
+}
+
 dependencies {
     // تفكيك مكتبات Java الأساسية (WorkManager + الإشعارات).
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
