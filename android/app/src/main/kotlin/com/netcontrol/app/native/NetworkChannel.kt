@@ -3,7 +3,6 @@ package com.netcontrol.app.native
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.net.wifi.WifiInfo
 import android.net.wifi.WifiManager
 import android.os.Build
 import io.flutter.plugin.common.BinaryMessenger
@@ -118,7 +117,8 @@ class NetworkChannel(
         @Suppress("DEPRECATION")
         return try {
             val rssi = wifi.connectionInfo.rssi
-            if (rssi == WifiInfo.INVALID_RSSI) null else rssi
+            // INVALID_RSSI ثابت WifiManager (=-9999) وليس WifiInfo.
+            if (rssi == WifiManager.INVALID_RSSI) null else rssi
         } catch (_: SecurityException) {
             null
         }
