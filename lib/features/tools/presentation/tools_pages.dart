@@ -7,7 +7,6 @@ import '../../../core/extensions/context_ext.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/presentation/widgets/app_background.dart';
 import '../../../core/presentation/widgets/glass_card.dart';
-import '../../../core/presentation/widgets/states.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../network_scan/data/network_scanner_repository_impl.dart';

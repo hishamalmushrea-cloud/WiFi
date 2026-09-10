@@ -165,7 +165,8 @@ class NetworkToolsRepositoryImpl implements NetworkToolsRepository {
           'https://rdap.org/$query',
           options: Options(responseType: ResponseType.json),
         );
-        final data = res.data is Map ? res.data as Map : {};
+        final data =
+            res.data is Map ? res.data as Map : <String, dynamic>{};
         final vcard = (data['entities'] is List && (data['entities'] as List).isNotEmpty)
             ? jsonEncode(data['entities'].first)
             : null;

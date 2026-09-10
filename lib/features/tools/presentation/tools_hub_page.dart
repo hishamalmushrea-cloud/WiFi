@@ -104,7 +104,8 @@ class ToolsHubPage extends ConsumerWidget {
   }
 
   void _open(BuildContext context, Widget page) {
-    Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
+    Navigator.of(context)
+        .push(MaterialPageRoute<void>(builder: (_) => page));
   }
 
   void _comingSoon(BuildContext context) {

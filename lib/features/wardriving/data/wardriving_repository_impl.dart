@@ -11,7 +11,6 @@ import '../../../core/database/app_database.dart';
 import '../../../core/data/mappers/wardriving_mapper.dart';
 import '../../../core/domain/entities/wardriving.dart';
 import '../../../core/domain/repositories/wardriving_repository.dart';
-import '../../../core/errors/exceptions.dart';
 import '../../../core/errors/result.dart';
 import '../../../core/utils/app_logger.dart';
 

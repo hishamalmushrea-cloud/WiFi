@@ -13,10 +13,12 @@ void main() {
     });
 
     test('كل قدرة تحدد مستوى Android وiOS', () {
-      // كل قيم التعداد مستخدمة أصلاً؛ يكفي التحقق من النوع والعدد.
+      // نتحقق أن المستويين داخل قيم التعداد المعروفة (وليس مجرد نوع
+      // ثابت وقت الترجمة — فذلك دائماً صحيح ولا يختبر شيئاً).
       expect(
-        PlatformCapabilities.all
-            .every((c) => c.android is SupportLevel && c.ios is SupportLevel),
+        PlatformCapabilities.all.every((c) =>
+            SupportLevel.values.contains(c.android) &&
+            SupportLevel.values.contains(c.ios)),
         isTrue,
       );
     });
