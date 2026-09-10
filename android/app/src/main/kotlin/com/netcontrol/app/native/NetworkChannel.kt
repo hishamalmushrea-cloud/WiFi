@@ -117,8 +117,10 @@ class NetworkChannel(
         @Suppress("DEPRECATION")
         return try {
             val rssi = wifi.connectionInfo.rssi
-            // INVALID_RSSI ثابت WifiManager (=-9999) وليس WifiInfo.
-            if (rssi == WifiManager.INVALID_RSSI) null else rssi
+            // ‏-9999 هي قيمة INVALID_RSSI الموثقة (الثابت نفسه ليس
+            // عاماً في كل إصدارات SDK فيفشل حلّه) — وطبقة Dart
+            // (RssiUtils.isValidRssi) ترشّح القيم غير المنطقية أيضاً.
+            if (rssi == -9999) null else rssi
         } catch (_: SecurityException) {
             null
         }
