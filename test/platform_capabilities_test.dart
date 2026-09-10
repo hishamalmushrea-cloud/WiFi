@@ -32,7 +32,8 @@ void main() {
     });
 
     test('levelFor ترجع مستوى المنصة الصحيح', () {
-      const cap = PlatformCapabilities.all.first;
+      // final وليس const — ‎.first ليست تعبيراً ثابتاً في Dart.
+      final cap = PlatformCapabilities.all.first;
       expect(PlatformCapabilities.levelFor(cap, isIOS: false), cap.android);
       expect(PlatformCapabilities.levelFor(cap, isIOS: true), cap.ios);
     });
