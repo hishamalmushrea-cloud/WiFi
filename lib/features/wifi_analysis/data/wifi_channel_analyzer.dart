@@ -14,7 +14,10 @@ class WifiChannelAnalyzer {
   /// يحسب رقم القناة من تردد MHz للنطاق 2.4 و 5.
   static int? channelForFrequency(int freqMhz) {
     // 2.4 GHz: القناة 1 عند 2412، كل قناة +5 MHz.
-    if (freqMhz >= 2412 && freqMhz <= 2484) {
+    // القناة 14 (اليابان فقط) استثناء: تقفز 12MHz فوق القناة 13
+    // (2472+12=2484) وليس +5 — فالمعادلة العامة تعطي 15 خطأً.
+    if (freqMhz == 2484) return 14;
+    if (freqMhz >= 2412 && freqMhz <= 2472) {
       return (freqMhz - 2412) ~/ 5 + 1;
     }
     // 5 GHz: القناة 36 عند 5180، كل قناة +5 MHz.
@@ -113,9 +116,14 @@ class WifiChannelAnalyzer {
   }
 
   /// القنوات التي يشغلها AP مع مراعاة اتساع النطاق.
+  ///
+  /// قوائم القنوات (‎[1,6,11] و[36,40,...] وi*4+1) كلها بخطوة قناة
+  /// كاملة 20MHz — فالامتداد يُقاس بخانات 20MHz لا 5MHz: قناة 20MHz
+  /// تشغل خانة واحدة، و40MHz خانتين، وهكذا. (قبل هذا التصحيح كان
+  /// span = width~/5 يجعل AP بعرض 20MHz يغطي [1,6,11] كلها!)
   static List<int> _coveredChannels(AccessPoint ap, List<int> bandChannels) {
     final width = ap.channelWidthMhz ?? 20;
-    final span = (width ~/ 5).clamp(1, bandChannels.length);
+    final span = (width ~/ 20).clamp(1, bandChannels.length);
     final idx = bandChannels.indexOf(ap.channel);
     if (idx == -1) return [ap.channel];
     final start = (idx - span ~/ 2).clamp(0, bandChannels.length - 1);
