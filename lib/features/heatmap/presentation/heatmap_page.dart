@@ -150,7 +150,6 @@ class SurveyDetailPage extends ConsumerStatefulWidget {
 
 class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
   List<SignalSample> _samples = const [];
-  bool _saving = false;
 
   /// مصدر قراءة الإشارة — الافتراضي: تلقائي على Android، يدوي على iOS.
   SignalSourceMode _mode =
@@ -395,11 +394,9 @@ class _SurveyDetailPageState extends ConsumerState<SurveyDetailPage> {
   }
 
   Future<void> _exportPdf() async {
-    setState(() => _saving = true);
     final result =
         await ref.read(surveyRepositoryProvider).exportPdfReport(widget.surveyId);
     if (!mounted) return;
-    setState(() => _saving = false);
     result.when(
       onSuccess: (path) => ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppStrings.reportSaved(path))),

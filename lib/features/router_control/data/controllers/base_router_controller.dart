@@ -133,7 +133,7 @@ abstract class BaseRouterController implements RouterController {
       return const [];
     }
     return raw
-        .whereType<Map>()
+        .whereType<Map<dynamic, dynamic>>()
         .map((e) => RouterClient(
               mac: (e['mac'] ?? e['macAddress'] ?? '').toString(),
               ip: (e['ip'] ?? e['ipAddress'] ?? '').toString(),
@@ -213,7 +213,7 @@ abstract class BaseRouterController implements RouterController {
       final decoded = jsonDecode(res.data.toString());
       final raw = (decoded is Map ? decoded['rules'] : decoded) as List? ?? const [];
       return raw
-          .whereType<Map>()
+          .whereType<Map<dynamic, dynamic>>()
           .map((e) => PortForwardRule(
                 id: e['id']?.toString(),
                 name: e['name'] as String? ?? '',
@@ -251,7 +251,7 @@ abstract class BaseRouterController implements RouterController {
       final decoded = jsonDecode(res.data.toString());
       final raw = (decoded is Map ? decoded['filters'] : decoded) as List? ?? const [];
       return raw
-          .whereType<Map>()
+          .whereType<Map<dynamic, dynamic>>()
           .map((e) => MacFilterEntry(
                 mac: e['mac'] as String? ?? '',
                 name: e['name'] as String?,

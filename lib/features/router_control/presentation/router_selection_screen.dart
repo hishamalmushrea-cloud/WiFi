@@ -142,7 +142,7 @@ class RouterSelectionScreen extends ConsumerWidget {
     WidgetRef ref,
     RouterBrand? brand,
   ) {
-    showModalBottomSheet(
+    showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       builder: (sheetContext) =>
