@@ -53,14 +53,14 @@ class HomeDashboard extends ConsumerWidget {
         actions: [
           IconButton(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const ActivityTimelinePage()),
+              MaterialPageRoute<void>(builder: (_) => const ActivityTimelinePage()),
             ),
             icon: const Icon(Icons.timeline_rounded),
             tooltip: AppStrings.activityTimeline,
           ),
           IconButton(
             onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SettingsPage()),
+              MaterialPageRoute<void>(builder: (_) => const SettingsPage()),
             ),
             icon: const Icon(Icons.settings_rounded),
             tooltip: AppStrings.settings,
@@ -141,7 +141,7 @@ class HomeDashboard extends ConsumerWidget {
                 itemCount: 6,
                 itemBuilder: (context, i) {
                   void open(Widget page) => Navigator.of(context)
-                      .push(MaterialPageRoute(builder: (_) => page));
+                      .push(MaterialPageRoute<void>(builder: (_) => page));
                   final routerConnected = ref.watch(routerProvider).isConnected;
                   final actions = <QuickActionData>[
                     QuickActionData(

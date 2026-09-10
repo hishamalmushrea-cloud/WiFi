@@ -33,7 +33,7 @@ class HeatmapPage extends ConsumerWidget {
         ),
         body: SafeArea(
           child: _SurveyList(onOpen: (id, name) {
-            Navigator.of(context).push(MaterialPageRoute(
+            Navigator.of(context).push(MaterialPageRoute<void>(
               builder: (_) => SurveyDetailPage(surveyId: id, surveyName: name),
             ));
           }),
@@ -66,7 +66,7 @@ class HeatmapPage extends ConsumerWidget {
     result.when(
       onSuccess: (survey) {
         if (!context.mounted) return;
-        Navigator.of(context).push(MaterialPageRoute(
+        Navigator.of(context).push(MaterialPageRoute<void>(
           builder: (_) =>
               SurveyDetailPage(surveyId: survey.id!, surveyName: name),
         ));

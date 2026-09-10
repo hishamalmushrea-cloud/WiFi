@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../core/domain/entities/device.dart';
 import '../../../core/extensions/context_ext.dart';
 import '../../../core/localization/app_strings.dart';
 import '../../../core/presentation/widgets/common_ui.dart';
@@ -137,7 +136,7 @@ class DevicesPage extends ConsumerWidget {
                           return ModernDeviceCard(
                             device: device,
                             onTap: () => Navigator.of(context).push(
-                              MaterialPageRoute(
+                              MaterialPageRoute<void>(
                                 builder: (_) =>
                                     DeviceDetailPage(deviceId: device.id),
                               ),

@@ -116,7 +116,7 @@ class NetworkScanPage extends ConsumerWidget {
                   onPressed: scan.isScanning
                       ? null
                       : () => Navigator.of(context).push(
-                            MaterialPageRoute(
+                            MaterialPageRoute<void>(
                                 builder: (_) => const PortScanPage()),
                           ),
                   icon: const Icon(Icons.radar_rounded),
@@ -185,7 +185,7 @@ class _DevicesGrid extends StatelessWidget {
             return ModernDeviceCard(
               device: device,
               onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
+                MaterialPageRoute<void>(
                   builder: (_) => DeviceDetailPage(deviceId: device.id),
                 ),
               ),

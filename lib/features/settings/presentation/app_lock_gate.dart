@@ -8,7 +8,6 @@ import '../../../core/presentation/widgets/glass_card.dart';
 import '../../../core/services/app_lock_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../data/settings_repository_impl.dart';
 import 'settings_providers.dart';
 
 /// بوابة قفل التطبيق — تغلّف المحتوى بالكامل وتظهر حاجزاً عند:

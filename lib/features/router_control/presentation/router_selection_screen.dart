@@ -227,7 +227,7 @@ class _ConnectSheetState extends ConsumerState<_ConnectSheet> {
       navigator.pop(); // إغلاق ورقة الاتصال
       // ننتقل للوحة التحكم بعد الاتصال الناجح.
       navigator.push(
-        MaterialPageRoute(builder: (_) => const RouterDashboardPage()),
+        MaterialPageRoute<void>(builder: (_) => const RouterDashboardPage()),
       );
     }
   }

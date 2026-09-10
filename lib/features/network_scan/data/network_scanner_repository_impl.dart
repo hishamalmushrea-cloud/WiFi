@@ -73,7 +73,7 @@ class NetworkScannerRepositoryImpl implements NetworkScannerRepository {
       for (var start = 0; start < hosts.length;
           start += AppConstants.lanScanBatchSize) {
         final batch = hosts.skip(start).take(AppConstants.lanScanBatchSize).toList();
-        await Future.wait(
+        await Future.wait<void>(
           batch.map((ip) => _probeHost(ip).then((alive) async {
                 scanned++;
                 if (alive) {
@@ -141,7 +141,7 @@ class NetworkScannerRepositoryImpl implements NetworkScannerRepository {
 
       // فحص اتصال TCP كامل (متاح بدون Root) بحد تزامن مدمج.
       final semaphore = _Semaphore(AppConstants.portScanConcurrency);
-      await Future.wait(
+      await Future.wait<void>(
         ports.map((port) async {
           await semaphore.run(() async {
             final state = await _probeTcpPort(ip, port);
