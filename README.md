@@ -65,3 +65,12 @@ lib/
     ├── wifi_analysis/    ├── router_control/  ├── wardriving/
     ├── tools/            ├── heatmap/         └── …
 ```
+
+## 📴 البناء دون اتصال (بلا إنترنت)
+
+لبناء الـ APK على كمبيوتر **بدون إنترنت** من Android Studio، يولّد الـ CI
+حزمة جاهزة تحتوي كل المكتبات (حزم Dart + Gradle 8.4 + ملفات Maven) وسكربت
+إعداد تلقائي — نزّلها من [Releases](https://github.com/hishamalmushrea-cloud/WiFi/releases)
+(الوسم `offline-kit-latest`) ثم اتبع الدليل الكامل في
+[`docs/OFFLINE_BUILD.md`](docs/OFFLINE_BUILD.md).
+
