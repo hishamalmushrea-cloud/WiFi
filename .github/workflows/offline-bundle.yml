@@ -1,0 +1,147 @@
+# ╀────────────────────────────────────────────────────────────────────
+#  حزمة البناء دون اتصال — Offline Build Kit
+#
+#  ⚠️ هذا ملف مرجعي: أنشئ بهذا المحتوى ملفاً باسم
+#     .github/workflows/offline-bundle.yml
+#     على فرع arena/01a0826a-wifi عبر محرر GitHub (زر Commit مباشرة).
+#
+#  ماذا يفعل: يبني المشروع بناءً كاملاً ثم يحزم كل ما يحتاجه جهاز
+#  «بلا إنترنت» لبناء الـ APK من Android Studio:
+#    1. مخزن حزم Dart كاملاً (192 حزمة) + pubspec.lock موثّق.
+#    2. توزيعة Gradle 8.4 كما نزّلها الـ wrapper (بنفس بنية المجلدات).
+#    3. كل ملفات Maven (AGP 8.3 + Kotlin 1.9 + AndroidX + إضافات Flutter)
+#       — لا يمكن حسابها يدوياً؛ تُلتقط فقط من بناء فعلي ناجح.
+#    4. ملفات تراخيص Android SDK.
+#    5. سكربت إعداد تلقائي (setup-offline.bat / .sh) + دليل الاستخدام.
+#
+#  التشغيل: يدوي فقط (workflow_dispatch) من تبويب Actions، أو عند
+#  رفع وسم offline-kit-*.
+# ╀────────────────────────────────────────────────────────────────────
+
+name: Build Offline Kit
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['offline-kit-*']
+
+permissions:
+  contents: write
+
+jobs:
+  kit:
+    name: تجهيز حزمة البناء دون اتصال
+    runs-on: ubuntu-latest
+    steps:
+      - name: سحب الكود
+        uses: actions/checkout@v4
+
+      - name: تثبيت Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: تثبيت Flutter 3.24.5
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: '3.24.5'
+
+      - name: تنزيل حزم Dart (pub get)
+        run: flutter pub get
+
+      - name: توليد الكود (build_runner)
+        run: dart run build_runner build --delete-conflicting-outputs
+
+      - name: بناء APK كامل (لتعبئة كل مخازن Gradle وMaven)
+        run: flutter build apk --release
+
+      - name: تجميع مكونات الحزمة
+        run: |
+          set -euo pipefail
+          mkdir -p kit/gradle
+
+          # 1) قفل النسخ + مخزن pub كاملاً (الحزم المصدرية — محايدة للمنصة)
+          cp pubspec.lock kit/pubspec.lock
+          PUB_CACHE_DIR="${PUB_CACHE:-$HOME/.pub-cache}"
+          cp -r "$PUB_CACHE_DIR" kit/pub-cache
+
+          # 2) توزيعة Gradle 8.4 ببنية wrapper/dists نفسها
+          #    (نفس اسم مجلد الهاش = يتعرف عليها الـ wrapper على أي جهاز)
+          cp -r "$HOME/.gradle/wrapper/dists" kit/gradle/wrapper-dists
+
+          # 3) كل ملفات Maven — الاستغلال الفعلي عن البناء دون اتصال
+          cp -r "$HOME/.gradle/caches/modules-2" kit/gradle/modules-2
+
+          # 4) تراخيص Android SDK (تمنع فشل gradle الشائع دون اتصال)
+          if [ -d "$ANDROID_HOME/licenses" ]; then
+            mkdir -p kit/licenses
+            cp -r "$ANDROID_HOME/licenses/." kit/licenses/
+          fi
+
+          # 5) سجل النسخ المستخدمة في الحزمة
+          {
+            echo "== Flutter =="; flutter --version
+            echo; echo "== Java =="; java -version 2>&1
+            echo; echo "== Gradle (توزيعة الـ wrapper) =="
+            ls "$HOME/.gradle/wrapper/dists"
+            echo; echo "== عدد حزم pub في المخزن =="
+            ls "$PUB_CACHE_DIR/hosted/pub.dev" | grep -v '^\.cache$' | wc -l
+            echo; echo "== حجم ملفات Maven =="
+            du -sh "$HOME/.gradle/caches/modules-2"
+          } > kit/versions.txt
+
+          # 6) سكربتات الإعداد والدليل (من المستودع نفسه)
+          cp scripts/offline/setup-offline.bat kit/ 2>/dev/null || true
+          cp scripts/offline/setup-offline.sh  kit/ 2>/dev/null || true
+          cp scripts/offline/README-OFFLINE.txt kit/ 2>/dev/null || true
+          cp docs/OFFLINE_BUILD.md kit/ 2>/dev/null || true
+
+      - name: ضغط الحزمة
+        run: |
+          command -v zip >/dev/null 2>&1 || sudo apt-get install -y zip >/dev/null
+          cd kit && zip -rq ../offline-kit.zip . && cd ..
+          echo "حجم الحزمة: $(du -h offline-kit.zip | cut -f1)"
+
+      - name: رفع الحزمة كأرتيفكت (احتياطي 90 يوماً)
+        uses: actions/upload-artifact@v4
+        with:
+          name: offline-kit
+          path: offline-kit.zip
+          retention-days: 90
+          compression-level: 0
+
+      - name: نشر الحزمة في Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: offline-kit-latest
+          name: حزمة البناء دون اتصال — Offline Build Kit
+          body: |
+            كل ما يلزم لبناء APK على جهاز **بدون إنترنت** من Android Studio:
+
+            - مخزن حزم Dart كامل + `pubspec.lock` موثّق
+            - توزيعة Gradle 8.4 + كل ملفات Maven (AGP/Kotlin/AndroidX)
+            - تراخيص Android SDK + سكربت إعداد تلقائي
+
+            **الاستخدام:** فك الضغط ثم شغّل `setup-offline.bat`
+            (الشرح الكامل في `docs/OFFLINE_BUILD.md` بالمستودع).
+          files: |
+            offline-kit.zip
+            kit/versions.txt
+          overwrite_files: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: تثبيت pubspec.lock في الفرع (للتناسق الدائم)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add pubspec.lock
+          if ! git diff --cached --quiet; then
+            git commit -m "chore(lock): تثبيت pubspec.lock المولّد من بناء حزمة العمل دون اتصال"
+            git push
+            echo "✓ ثُبّت pubspec.lock في الفرع"
+          else
+            echo "pubspec.lock محدّث أصلاً — لا تغيير"
+          fi
