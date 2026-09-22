@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- الثيم أثناء إقلاع التطبيق (قبل رسم واجهة Flutter).
+         خلفية داكنة مطابقة لهوية التطبيق (#0A0E1A). -->
+    <style name="LaunchTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">@drawable/launch_background</item>
+    </style>
+
+    <!-- الثيم بعد الإقلاع — يأخذ Flutter إدارة الواجهة بالكامل. -->
+    <style name="NormalTheme" parent="@android:style/Theme.Black.NoTitleBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+    </style>
+</resources>

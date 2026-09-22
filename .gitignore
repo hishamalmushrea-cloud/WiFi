@@ -1,0 +1,51 @@
+# ── Flutter / Dart ───────────────────────────────────────────
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+pubspec.lock
+
+# ── Android ──────────────────────────────────────────────────
+android/.gradle/
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.kt
+android/.idea/
+android/app/debug/
+android/app/profile/
+android/app/release/
+android/key.properties
+*.jks
+*.keystore
+
+# ── iOS ──────────────────────────────────────────────────────
+ios/Pods/
+ios/.symlinks/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+ios/Flutter/Generated.xcconfig
+ios/Flutter/ephemeral/
+ios/Flutter/App.framework
+ios/Flutter/flutter_export_environment.sh
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+**/.DS_Store
+
+# ── التوليد ──────────────────────────────────────────────────
+*.g.dart
+*.freezed.dart
+!lib/generated/**
+
+# ── أدوات وملفات متنوعة ─────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.log
+coverage/
+test/coverage/

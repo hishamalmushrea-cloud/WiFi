@@ -1,0 +1,101 @@
+name: netcontrol
+description: نت كونترول - تطبيق شامل للتحكم بالشبكة والأمان (Android / iOS)
+publish_to: "none"
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.3.0 <4.0.0"
+  flutter: ">=3.19.0"
+
+
+# ── تثبيت نسخ إضافية محددة ─────────────────────────────────────
+# إصدارات أحدث من إضافتين تستخدمان flutter.compileSdkVersion في ملفات
+# Gradle الخاصة بهن، والامتداد "flutter" غير متوفر لمشاريع المكتبات في
+# Flutter 3.24 (تُوفّره 3.29+). نثبّت آخر نسخة قبل اعتماد الصياغة:
+dependency_overrides:
+  geolocator_android: 4.6.1
+  path_provider_android: 2.2.15
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # ── إدارة الحالة ──────────────────────────────────────────────
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # ── قاعدة البيانات (Drift / SQLCipher) ────────────────────────
+  drift: ^2.16.0
+  sqlcipher_flutter_libs: ^0.6.4
+  sqlite3: ^2.4.0
+  path_provider: ^2.1.3
+  # path/collection/rxdart تحزمها Flutter/التوابع؛ نترك الحل لـ pub
+  # لتفادي تعارض الحد الأدنى مع النسخة المثبّتة مع الـ SDK.
+  path: any
+  collection: any
+  rxdart: any
+
+  # ── الشبكات ───────────────────────────────────────────────────
+  dio: ^5.4.1
+  dart_ping: ^9.0.1
+  dart_ping_ios: ^4.0.2
+  bonsoir: ^5.1.0
+  network_info_plus: ^6.0.0
+  connectivity_plus: ^6.0.3
+
+  # ── الرسوم البيانية والخرائط ─────────────────────────────────
+  fl_chart: ^0.67.0
+  flutter_map: ^6.1.0
+  latlong2: ^0.9.1
+
+  # ── الموقع والبلوتوث ─────────────────────────────────────────
+  geolocator: 13.0.3
+
+  # ── التخزين والتصدير ─────────────────────────────────────────
+  shared_preferences: ^2.2.3
+  flutter_secure_storage: ^9.0.0
+  pdf: ^3.10.7
+  csv: ^5.1.1
+
+  # ── الخدمات الخلفية والإشعارات ───────────────────────────────
+  flutter_local_notifications: ^17.0.0
+
+  # ── الأمان والتشفير ──────────────────────────────────────────
+  pointycastle: ^3.7.4
+
+  # ── أدوات مساعدة ─────────────────────────────────────────────
+  logger: ^2.2.0
+  freezed_annotation: ^2.4.1
+  json_annotation: ^4.8.1
+
+  # ── معلومات الجهاز والصلاحيات ────────────────────────────────
+  package_info_plus: ^8.0.0
+  permission_handler: ^11.2.0
+
+  # ── واجهة المستخدم ──────────────────────────────────────────
+  google_fonts: ^6.2.0
+  shimmer: ^3.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.2
+
+  # ── توليد الكود ──────────────────────────────────────────────
+  build_runner: ^2.4.9
+  drift_dev: any
+  riverpod_generator: ^2.4.0
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  riverpod_lint: any
+  custom_lint: any
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/lottie/
+    - assets/data/
